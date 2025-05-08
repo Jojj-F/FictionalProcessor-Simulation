@@ -25,6 +25,7 @@ typedef enum {R,I,J} InstrType;
 
 typedef struct {
     int opcode, r1, r2, r3, imm, shamt, address;
+    char raw[64]; 
     InstrType type;
 } Instruction; 
 
@@ -57,6 +58,47 @@ InstrType get_instr_type (int opcode) {
 }
 
 //Functions for Instruction Parsing
+void parse_instruction(char *line, int index) {
+    Instruction inst;
+    char instruction[10]; // a char array to store the instruction name
+    sscanf(line, "%s", instruction);
+
+    inst.opcode = get_opcode(instruction);
+    strcpy(inst.raw, line); // used for printing later
+
+    switch (inst.opcode) {
+        case 0:
+        case 1:
+        case 2:
+        case 5:
+            sscanf(line, "%*s R%d R%d R%d", &inst.r1, &inst.r2, &inst.r3);
+            break;
+        case 8:
+        case 9:
+            sscanf(line, "%*s R%d R%d R%d", &inst.r1, &inst.r2, &inst.shamt);
+            inst.r3 = 0; // R3 is 0 
+            break;
+        case 3:
+            sscanf(line, "%*s R%d %d", &inst.r1, &inst.imm);
+            break;
+        case 4:
+            sscanf(line, "%*s R%d R%d %d", &inst.r1, &inst.imm);
+            inst.r2 = 0; //R2 is 0
+            break;
+        case 6:
+        case 10:
+        case 11:
+            sscanf(line, "%*s R%d R%d %d", &inst.r1, &inst.r2, &inst.imm);
+            break;
+        case 7:
+            sscanf(line, "%*s %d", &inst.address);
+            break;
+    }
+
+    parsed_instructions[index] = inst;
+    memory[index] = inst.opcode; // Simulated simple load (actual encoding would differ)
+    instruction_counter++;
+}
 
 //Data Structure
 
