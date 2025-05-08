@@ -28,10 +28,35 @@ typedef struct {
     InstrType type;
 } Instruction; 
 
-//Instruction Structure 
+Instruction parsed_instructions [InstructionLimit]; //array of instructions with limit: 1024
+int instruction_counter = 0;
 
+//Instruction opcodes 
+int get_opcode (const char* ins) {
+    if (strcmp(ins, "ADD") == 0) return 0;
+    if (strcmp(ins, "SUB") == 0) return 1;
+    if (strcmp(ins, "MUL") == 0) return 2;
+    if (strcmp(ins, "MOVI") == 0) return 3;
+    if (strcmp(ins, "JEQ") == 0) return 4;
+    if (strcmp(ins, "AND") == 0) return 5;
+    if (strcmp(ins, "XORI") == 0) return 6;
+    if (strcmp(ins, "JMP") == 0) return 7;
+    if (strcmp(ins, "LSL") == 0) return 8;
+    if (strcmp(ins, "LSR") == 0) return 9;
+    if (strcmp(ins, "MOVR") == 0) return 10;
+    if (strcmp(ins, "MOVM") == 0) return 11;
+    return -1;
+}
 
-//Array to store the instructions
+InstrType get_instr_type (int opcode) {
+    if (opcode == 0 || opcode == 1 || opcode == 2 || opcode == 5 || opcode == 8 || opcode == 9) 
+        return R;
+    else if (opcode == 7)
+        return J;
+    return I;    
+}
+
+//Functions for Instruction Parsing
 
 //Data Structure
 
@@ -64,8 +89,6 @@ typedef struct {
         }
 
     }
-
-//Functions for Instruction Parsing
 
 //Pipeline logic
 
