@@ -21,6 +21,12 @@ uint32_t PC = 0;
 
 //Instruction Types 
 
+typedef enum {R,I,J} InstrType;
+
+typedef struct {
+    int opcode, r1, r2, r3, imm, shamt, address;
+    InstrType type;
+} Instruction; 
 
 //Instruction Structure 
 
@@ -73,7 +79,7 @@ uint32_t PC = 0;
 
 //MEM stage
 
-//Final State (for both registvers & memory)
+//Final State (for both registers & memory)
 
 //Testing
     void test_initialization(){
