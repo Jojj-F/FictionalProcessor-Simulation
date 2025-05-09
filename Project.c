@@ -2,6 +2,7 @@
 #include <string.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 
 // Implement the memory: 2048 * 32-bit word-addressable memory 
@@ -20,7 +21,6 @@ uint32_t PC = 0;
 
 
 //Instruction Types 
-
 typedef enum {R,I,J} InstrType;
 
 typedef struct {
@@ -100,7 +100,71 @@ void parse_instruction(char *line, int index) {
     instruction_counter++;
 }
 
-//Data Structure
+
+// Execute instructions
+void execute_instruction(Instruction inst, int cycle) {
+    printf("\n[Cycle %d] Executing: %s", cycle, inst.raw);
+
+    switch (inst.opcode) {
+        case 0:
+            registers[inst.r1] = registers[inst.r2] + registers[inst.r3];
+            break;
+        case 1:
+            registers[inst.r1] = registers[inst.r2] - registers[inst.r3];
+            break;
+        case 2:
+            registers[inst.r1] = registers[inst.r2] * registers[inst.r3];
+            break;
+        case 3:
+            registers[inst.r1] = inst.imm;
+            break;
+        case 4:
+            if (registers[inst.r1] == registers[inst.r2]) {
+                PC = PC + 1 + inst.imm;
+                return;
+            }
+            break;
+        case 5:
+            registers[inst.r1] = registers[inst.r2] & registers[inst.r3];
+            break;
+        case 6:
+            registers[inst.r1] = registers[inst.r2] ^ inst.imm;
+            break;
+        case 7:
+            PC = (PC & 0xF0000000) | inst.address; //PC & 0xF0000000: it masks the 1st 4-bits (31-28) of the current PC  
+            return;
+        case 8:
+            registers[inst.r1] = registers[inst.r2] << inst.r3;
+            break;
+        case 9:
+            registers[inst.r1] = registers[inst.r2] >> inst.r3;
+            break;
+        case 10:
+            registers[inst.r1] = memory[registers[inst.r2] + inst.imm];
+            break;
+        case 11:
+            memory[registers[inst.r2] + inst.imm] = registers[inst.r1];
+            break;
+    }
+    PC++;
+}
+
+// Load instructions from text file
+void load_instructions(const char *filename) {
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("Error opening instruction file");
+        exit(EXIT_FAILURE);
+    }
+
+    char line[64];
+    int index = 0;
+    while (fgets(line, sizeof(line), file)) {
+        parse_instruction(line, index);
+        index++;
+    }
+    fclose(file);
+}
 
 
 //Initialization Functions
@@ -132,6 +196,8 @@ void parse_instruction(char *line, int index) {
 
     }
 
+//Data Structure
+
 //Pipeline logic
 
 //Main loop (pipeline)
@@ -153,6 +219,8 @@ void parse_instruction(char *line, int index) {
         print_memory(0, 10);                      // Instructions region
         print_memory(DataStart, DataStart + 6); // Start of data segment
     }
+
+
 
 //Main method
     int main(){
