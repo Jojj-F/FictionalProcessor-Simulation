@@ -75,16 +75,12 @@ void parse_instruction(char *line, int index) {
             break;
         case 8:
         case 9:
-            sscanf(line, "%*s R%d R%d R%d", &inst.r1, &inst.r2, &inst.shamt);
-            inst.r3 = 0; // R3 is 0 
+            sscanf(line, "%*s R%d R%d %d", &inst.r1, &inst.r2, &inst.shamt);
             break;
         case 3:
             sscanf(line, "%*s R%d %d", &inst.r1, &inst.imm);
             break;
         case 4:
-            sscanf(line, "%*s R%d R%d %d", &inst.r1, &inst.imm);
-            inst.r2 = 0; //R2 is 0
-            break;
         case 6:
         case 10:
         case 11:
