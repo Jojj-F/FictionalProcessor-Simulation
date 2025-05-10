@@ -13,11 +13,17 @@
 #define MemorySize 2048
 #define InstructionLimit 1024 // 0  to 1023
 #define DataStart 1024
-#define RegisterNo 32
+#define RegisterNo 32 
 
 uint32_t memory[MemorySize]; // Unsigned 32-bit integer
 uint32_t registers[RegisterNo];
 uint32_t PC = 0;
+
+Instruction parsed_instructions [InstructionLimit]; //array of instructions with limit: 1024
+
+int current_cycle = 1;
+int left;
+int right;
 
 
 //Instruction Types 
@@ -30,10 +36,10 @@ typedef struct {
     int result;
     int WBflag;
     int MEMflag;
+    int cycle; 
 } Instruction; 
 
-Instruction parsed_instructions [InstructionLimit]; //array of instructions with limit: 1024
-int instruction_counter = 0;
+typedef enum {F,D,E,M,W} cycle;
 
 //Instruction opcodes 
 int get_opcode (const char* ins) {
@@ -96,7 +102,7 @@ void parse_instruction(char *line, int index) {
 
     parsed_instructions[index] = inst;
     memory[index] = inst.opcode; // Simulated simple load (actual encoding would differ)
-    instruction_counter++;
+    PC++;
 }
 
 
@@ -145,7 +151,6 @@ void execute_instruction(Instruction inst, int cycle) {
             memory[registers[inst.r2] + inst.imm] = registers[inst.r1];
             break;
     }
-    PC++;
 }
 
 // Load instructions from text file
