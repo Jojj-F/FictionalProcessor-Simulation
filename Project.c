@@ -27,6 +27,9 @@ typedef struct {
     int opcode, r1, r2, r3, imm, shamt, address;
     char raw[64]; 
     InstrType type;
+    int result;
+    int WBflag;
+    int MEMflag;
 } Instruction; 
 
 Instruction parsed_instructions [InstructionLimit]; //array of instructions with limit: 1024
