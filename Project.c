@@ -5,6 +5,16 @@
 #include <stdlib.h>
 
 
+
+Instruction pipelinedInstructions[4];
+int left=0;
+int right=-1;
+
+
+/////////////////////Added By Youssef Maybe Redundant^^^^^^///////////////////
+
+
+
 // Implement the memory: 2048 * 32-bit word-addressable memory 
 // Create register structure (R0-R31, PC)
 // Initialize memory regions (Instructions: 0 - 1023, Data: 1024-2047)
@@ -22,8 +32,6 @@ uint32_t PC = 0;
 Instruction parsed_instructions [InstructionLimit]; //array of instructions with limit: 1024
 
 int current_cycle = 1;
-int left;
-int right;
 
 
 //Instruction Types 
@@ -225,12 +233,47 @@ void load_instructions(const char *filename) {
     }
 
 
-
-//Main method
-    int main(){
+    void preidk(){
         initialize_registers();
         initialize_memory();
         test_initialization();
+        //When to stop? 
+    }
+    
+    void idk(){
+        for(int i=left;i<=right;i++){
+            switch(pipelinedInstructions[i].cycle){
+                case 1: //Decode
+                case 2:break;
+                case 3: //execute Note Add This line In jump execute {right=i}
+                case 4:break;
+                case 5: //memory
+                case 6: //WriteLine
+            }
+            pipelinedInstructions[i].cycle++;
+        }
+        if(pipelinedInstructions[left].cycle==7)left=(left+1)%4;
+        if(current_cycle%2==1 &&!isFull()){
+            //fetch (move below code in fetch)
+            right=(right+1)%4; //first do add then fetch put into pipleined instructions array index right
+            PC++;
+        }
+        current_cycle++;
+    }
+    int isFull(){
+        if(left<right&&right-left==3 || right<left &&right+1==left)
+            return 1;
         return 0;
     }
+
+//Main method
+    int main(){
+        preidk();
+        int whenToStop=1; //define when to stop
+        while(whenToStop){
+        idk();
+        }
+        return 0;
+    }
+
 
