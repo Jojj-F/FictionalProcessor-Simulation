@@ -43,7 +43,7 @@ typedef enum {F,D,E,M,W} cycle;
 
 //Instruction opcodes 
 int get_opcode (const char* ins) {
-    if (strcmp(ins, "ADD") == 0) return 0;
+    if (strcmp(ins, "ADD") == 0) return 0; // WB = 0,1 MEMflag = 0,1
     if (strcmp(ins, "SUB") == 0) return 1;
     if (strcmp(ins, "MUL") == 0) return 2;
     if (strcmp(ins, "MOVI") == 0) return 3;
@@ -113,6 +113,7 @@ void execute_instruction(Instruction inst, int cycle) {
     switch (inst.opcode) {
         case 0:
             registers[inst.r1] = registers[inst.r2] + registers[inst.r3];
+            // result 
             break;
         case 1:
             registers[inst.r1] = registers[inst.r2] - registers[inst.r3];
@@ -121,7 +122,7 @@ void execute_instruction(Instruction inst, int cycle) {
             registers[inst.r1] = registers[inst.r2] * registers[inst.r3];
             break;
         case 3:
-            registers[inst.r1] = inst.imm;
+            registers[inst.r1] = inst.imm; 
             break;
         case 4:
             if (registers[inst.r1] == registers[inst.r2]) {
