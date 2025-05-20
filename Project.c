@@ -38,7 +38,8 @@ int current_cycle = 1;
 typedef enum {R,I,J} InstrType;
 
 typedef struct {
-    int opcode, r1, r2, r3, imm, shamt, address;
+    int opcode, r1, r2, r3, shamt, address;
+    int32_t imm; //signed immediate values 
     char raw[64]; 
     InstrType type;
     int result;
