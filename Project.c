@@ -6,7 +6,7 @@
 
 
 
-Instruction pipelinedInstructions[4];
+Instruction pipelinedInstructions[4]; //4 instructions running in parallel
 int left=0;
 int right=-1;
 
@@ -50,22 +50,6 @@ typedef struct {
 
 typedef enum {F,D,E,M,W} cycle;
 
-//Instruction opcodes 
-int get_opcode (const char* ins) {
-    if (strcmp(ins, "ADD") == 0) return 0; // WB = 0,1 MEMflag = 0,1
-    if (strcmp(ins, "SUB") == 0) return 1;
-    if (strcmp(ins, "MUL") == 0) return 2;
-    if (strcmp(ins, "MOVI") == 0) return 3;
-    if (strcmp(ins, "JEQ") == 0) return 4;
-    if (strcmp(ins, "AND") == 0) return 5;
-    if (strcmp(ins, "XORI") == 0) return 6;
-    if (strcmp(ins, "JMP") == 0) return 7;
-    if (strcmp(ins, "LSL") == 0) return 8;
-    if (strcmp(ins, "LSR") == 0) return 9;
-    if (strcmp(ins, "MOVR") == 0) return 10;
-    if (strcmp(ins, "MOVM") == 0) return 11;
-    return -1;
-}
 
 InstrType get_instr_type (int opcode) {
     if (opcode == 0 || opcode == 1 || opcode == 2 || opcode == 5 || opcode == 8 || opcode == 9) 
@@ -74,6 +58,13 @@ InstrType get_instr_type (int opcode) {
         return J;
     return I;    
 }
+
+void fetch(){
+    right=(right+1)%4; //first do add then fetch put into pipleined instructions array index right
+    pipelinedInstructions[right] = parsed_instructions[PC];
+    PC++;
+}
+
 
 //Functions for Instruction Parsing
 void parse_instruction(char *line, int index) {
@@ -111,7 +102,7 @@ void parse_instruction(char *line, int index) {
 
     parsed_instructions[index] = inst;
     memory[index] = inst.opcode; // Simulated simple load (actual encoding would differ)
-    PC++;
+    PC++; 
 }
 
 
@@ -174,11 +165,28 @@ void load_instructions(const char *filename) {
     char line[64];
     int index = 0;
     while (fgets(line, sizeof(line), file)) {
-        parse_instruction(line, index);
+        parse_instruction(line, index); 
         index++;
     }
     fclose(file);
 }
+
+char* encode_opcode(const char* ins){
+    if (strcmp(ins, "ADD") == 0) return "0000"; // WB = 0,1 MEMflag = 0,1
+    if (strcmp(ins, "SUB") == 0) return "0001";
+    if (strcmp(ins, "MUL") == 0) return "0010";
+    if (strcmp(ins, "MOVI") == 0) return "0011";
+    if (strcmp(ins, "JEQ") == 0) return "0100";
+    if (strcmp(ins, "AND") == 0) return "0101";
+    if (strcmp(ins, "XORI") == 0) return "0110";
+    if (strcmp(ins, "JMP") == 0) return "0111";
+    if (strcmp(ins, "LSL") == 0) return "1000";
+    if (strcmp(ins, "LSR") == 0) return "1001";
+    if (strcmp(ins, "MOVR") == 0) return "1010";
+    if (strcmp(ins, "MOVM") == 0) return "1011";
+    return "error"; 
+}
+
 
 
 //Initialization Functions
@@ -256,9 +264,7 @@ void load_instructions(const char *filename) {
         }
         if(pipelinedInstructions[left].cycle==7)left=(left+1)%4;
         if(current_cycle%2==1 &&!isFull()){
-            //fetch (move below code in fetch)
-            right=(right+1)%4; //first do add then fetch put into pipleined instructions array index right
-            PC++;
+            fetch();
         }
         current_cycle++;
     }
