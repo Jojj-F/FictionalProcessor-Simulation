@@ -60,8 +60,7 @@ InstrType get_instr_type (int opcode) {
 }
 
 void fetch(){
-    right=(right+1)%4; //first do add then fetch put into pipleined instructions array index right
-    pipelinedInstructions[right] = parsed_instructions[PC];
+   
     PC++;
 }
 

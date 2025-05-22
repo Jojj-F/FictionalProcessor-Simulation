@@ -5,7 +5,6 @@
 #include <stdlib.h>
 
 //==========================================Data==========================================
-
 //===================Constants===================
 #define MEMORY_SIZE 2048
 #define INSTRUCTION_START 0
@@ -15,7 +14,7 @@
 #define REGISTER_NO 32 
 #define MAX_PIPELINE_DEPTH  4
 //=====================Memory=====================
-uint32_t mainMemory[MEMORY_SIZE]; //TODO change to carry binary string <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+char mainMemory[MEMORY_SIZE][33]; //TODO change to carry binary string <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 //=====================registerFile==================
 uint32_t registerFile[REGISTER_NO]; 
 uint32_t pc = 0;
@@ -28,7 +27,7 @@ int programCycle=1;
 typedef enum {R,I,J} InstrType;
 typedef enum {F,D,E,M,W} CyclePhase;
 typedef struct {
-    char encodedInstruction[64]; 
+    char encodedInstruction[33  ]; 
     int instructionCycle; // to be set = 1 
     int operationResult;
     //After Decoding the below values should be filled
@@ -46,7 +45,7 @@ void initialize_program(){
 }
 void initialize_memory() {
     for(int i = 0; i < MEMORY_SIZE; i++)
-        mainMemory[i] = 0;
+       strcpy(mainMemory[i], "00000000000000000000000000000000");
 }
 void initialize_registerFile(){
     for (int i = 0; i < REGISTER_NO; i++) 
@@ -62,14 +61,14 @@ void load_program(const char *filename) {
     char line[64];
     int index = 0;
     while (fgets(line, sizeof(line), file)) {
-        mainMemory[index]=encode_instruction(line); //TODO change<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        strcpy(mainMemory[index], encode_instruction(line));
         index++;
     }
     fclose(file);
 }
 
 
-InstrType get_instr_type (int opcode) {
+InstrType get_instr_type (char* opcode) {
     if (opcode == "0000" || opcode == "0001" || opcode == "0010" || opcode == "0101" || opcode == "1000" || opcode == "1001") 
         return R;
     else if (opcode == "0111")
@@ -80,8 +79,8 @@ InstrType get_instr_type (int opcode) {
 
 char* encode_instruction(char* plainInstruction){//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     int size=strlen(plainInstruction);
-    char opcode[5];char r1[3];char r2[3];char r3[3];
-    opcode[4]='\0';r1[0]='0';r1[2]='\0';r2[0]='0';r2[2]='\0';r3[0]='0';r3[2]='\0';
+    char opcode[5];char r1[]="00";char r2[]="00";char r3[]="00";
+    opcode[4]='\0';
     int getOpCode=1;int wR=1;
     int i=0;
     for(;i<size;i++){
@@ -107,12 +106,38 @@ char* encode_instruction(char* plainInstruction){//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         else break;
     }
     int sizeRem=size-i;
+    if(sizeRem==0)sizeRem++;
     char rem[sizeRem+1];rem[sizeRem]='\0';
     int ptr=0;
     while(i<size)rem[ptr++]=plainInstruction[i++];
-
+    if(sizeRem==0)rem[0]='0';
     char* encodedOpCode=encode_opcode(opcode);
+    char* encodedR1=convertIntToBinary(atoi(r1),5);
+    char* encodedR2=convertIntToBinary(atoi(r2),5);
+    char* encodedR3=convertIntToBinary(atoi(r3),5);
+    InstrType type= get_instr_type(atoi(encodedOpCode));
+    char* remaining;
+    if(type==R)remaining=convertIntToBinary(atoi(rem),13);
+    else if(type==I)remaining=convertIntToBinary(atoi(rem),18);
+    else remaining=convertIntToBinary(atoi(rem),28);
 
+
+    int len_op = strlen(encodedOpCode);
+    int len_r1 = strlen(encodedR1);
+    int len_r2 = strlen(encodedR2);
+    int len_r3 = strlen(encodedR3);
+    int len_rem = strlen(remaining);
+
+    int total_len = len_op + len_r1 + len_r2 + len_r3 + len_rem;
+
+    char* merged = malloc(total_len + 1);
+    strcpy(merged, encodedOpCode);
+    strcat(merged, encodedR1);
+    strcat(merged, encodedR2);
+    strcat(merged, encodedR3);
+    strcat(merged, remaining);
+    printf("Merged binary string: %s\n", merged);
+    return merged;
 }
 char* encode_opcode(char* plainOpcode){  //passing only opcode 
     if (strcmp(plainOpcode, "ADD ") == 0) return "0000"; // WB = 0,1 MEMflag = 0,1
@@ -128,49 +153,7 @@ char* encode_opcode(char* plainOpcode){  //passing only opcode
     if (strcmp(plainOpcode, "MOVR") == 0) return "1010";
     if (strcmp(plainOpcode, "MOVM") == 0) return "1011";
     return "error";
-}
-char* encode_register(char* plainRegister){
-    if (strcmp(plainRegister, "R0") == 0) return "00000"; 
-    if (strcmp(plainRegister, "R1") == 0) return "00001";
-    if (strcmp(plainRegister, "R2") == 0) return "00010";
-    if (strcmp(plainRegister, "R3") == 0) return "00011";
-    if (strcmp(plainRegister, "R4") == 0) return "00100";
-    if (strcmp(plainRegister, "R5") == 0) return "00101";
-    if (strcmp(plainRegister, "R6") == 0) return "00110";
-    if (strcmp(plainRegister, "R7") == 0) return "00111";
-    if (strcmp(plainRegister, "R8") == 0) return "01000";
-    if (strcmp(plainRegister, "R9") == 0) return "01001";
-    if (strcmp(plainRegister, "R10") == 0) return "01010";
-    if (strcmp(plainRegister, "R11") == 0) return "01011";
-    if (strcmp(plainRegister, "R12") == 0) return "01100";
-    if (strcmp(plainRegister, "R13") == 0) return "01101";
-    if (strcmp(plainRegister, "R14") == 0) return "01110";
-    if (strcmp(plainRegister, "R15") == 0) return "01111";
-    if (strcmp(plainRegister, "R16") == 0) return "10000";
-    if (strcmp(plainRegister, "R17") == 0) return "10001";
-    if (strcmp(plainRegister, "R18") == 0) return "10010";
-    if (strcmp(plainRegister, "R19") == 0) return "10011";
-    if (strcmp(plainRegister, "R20") == 0) return "10100";
-    if (strcmp(plainRegister, "R21") == 0) return "10101";
-    if (strcmp(plainRegister, "R22") == 0) return "10110";
-    if (strcmp(plainRegister, "R23") == 0) return "10111";
-    if (strcmp(plainRegister, "R24") == 0) return "11000";
-    if (strcmp(plainRegister, "R25") == 0) return "11001";
-    if (strcmp(plainRegister, "R26") == 0) return "11010";
-    if (strcmp(plainRegister, "R27") == 0) return "11011";
-    if (strcmp(plainRegister, "R28") == 0) return "11100";
-    if (strcmp(plainRegister, "R29") == 0) return "11101";
-    if (strcmp(plainRegister, "R30") == 0) return "11110";
-    if (strcmp(plainRegister, "R31") == 0) return "11111";
-    return "error";
-    
-}
-char* encode_remaining(char* plain, InstrType t){//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    
-}
-
-
-char* convertIntToBinary(int n, int size) {
+}char* convertIntToBinary(int n, int size) {
     char* str = malloc(size + 1); 
     for (int i = size - 1; i >= 0; i--) {
         str[i] = (n % 2) + '0';
@@ -181,10 +164,44 @@ char* convertIntToBinary(int n, int size) {
 }
 //=====================Program Logic========================
 
-void decode(){
+void decode(Instruction instr){
+    char opcode[5];opcode[4]='\0';
+    char er1[6];er1[5]='\0';
+    char er2[6];er2[5]='\0';
+    char er3[6];er3[5]='\0';
 
-}
-void execute(Instruction inst, int cycle){
+    strncpy(opcode, instr.encodedInstruction, 4);
+    instr.type=get_instr_type(opcode);
+    instr.opcode=atoi(opcode);
+    if(instr.type=R){
+        
+        memcpy(er1, instr.encodedInstruction + 4, 5); 
+        instr.r1=atoi(er1);
+        memcpy(er2, instr.encodedInstruction + 9, 5); 
+        instr.r2=atoi(er2);
+        memcpy(er3, instr.encodedInstruction + 14, 5);
+        instr.r3=atoi(er3); 
+        char sha[14];sha[13]='\0';
+        memcpy(sha, instr.encodedInstruction + 19, 13);
+        instr.shamt=atoi(sha); 
+ 
+        
+    }else if(instr.type=I){
+        memcpy(er1, instr.encodedInstruction + 4, 5); 
+        instr.r1=atoi(er1);
+        memcpy(er2, instr.encodedInstruction + 9, 5); 
+        instr.r2=atoi(er2);
+        char im[19];im[18]='\0';
+        memcpy(im, instr.encodedInstruction + 14, 18);
+        instr.imm=atoi(im); 
+    }else{
+        char ad[29];ad[28]='\0';
+        memcpy(ad, instr.encodedInstruction + 19, 13);
+        instr.address=atoi(ad); 
+    }
+
+}   
+void execute(Instruction inst, int cycle,int i){
     printf("\n[Cycle %d] Executing: %s", cycle, inst.encodedInstruction);
 
     switch (inst.opcode) {
@@ -205,10 +222,10 @@ void execute(Instruction inst, int cycle){
             inst.WBflag = 1;
             break;
         case 4:
-            if (inst.operationResult == registerFile[inst.r2]) {
+            right=i;
+            if (inst.operationResult == registerFile[inst.r2]) 
                 pc = pc + 1 + inst.imm;
-                right = left;
-            }
+            
             break;
         case 5:
             inst.operationResult = registerFile[inst.r2] & registerFile[inst.r3];
@@ -219,8 +236,8 @@ void execute(Instruction inst, int cycle){
             inst.WBflag = 1;
             break;
         case 7:
+            right=i;
             pc = (pc & 0xF0000000) | inst.address; //pc & 0xF0000000: it masks the 1st 4-bits (31-28) of the current pc  
-            right = left; 
             return;
         case 8:
             inst.operationResult = registerFile[inst.r2] << inst.shamt;
@@ -260,7 +277,7 @@ void memory(Instruction inst){
                 
             case 11:  // STORE
                 // Store to memory
-                mainMemory[inst.operationResult] = registerFile[inst.r1];
+                strcpy(mainMemory[inst.operationResult] , registerFile[inst.r1]);
                 printf(", Storing to address %d", inst.operationResult);
                 break;
         }
@@ -279,7 +296,13 @@ void write_back(Instruction inst){
         inst.operationResult = inst.operationResult;
         printf(", Writing %d to R%d", inst.operationResult, inst.r1);
     }
-
+}
+fetch(){
+    right=(right+1)%4; //first do add then fetch put into pipleined instructions array index right
+    Instruction instr;
+    strcpy(instr.encodedInstruction, mainMemory[pc]);
+    pc++;
+    pipelinedInstructions[right] =instr;
 }
 //=====================Pipeline Logic=======================
 int isFull(){
@@ -291,12 +314,12 @@ int isFull(){
 void pipeline(){
     for(int i=left;i<=right;i++){
             switch(pipelinedInstructions[i].instructionCycle){
-                case 1: decode();
+                case 1: decode(pipelinedInstructions[i]);
                 case 2:break;
-                case 3: execute();//execute Note Add This line In jump execute {right=i}
+                case 3: execute(pipelinedInstructions[i],pipelinedInstructions[i].instructionCycle,i);//execute Note Add This line In jump execute {right=i}
                 case 4:break;
-                case 5:memory();break;//memory
-                case 6:write_back(); //WriteBack
+                case 5:memory(pipelinedInstructions[i]);break;//memory
+                case 6:write_back(pipelinedInstructions[i]); //WriteBack
             }
             pipelinedInstructions[i].instructionCycle++;
         }
