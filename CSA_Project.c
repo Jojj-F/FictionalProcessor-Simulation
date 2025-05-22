@@ -69,17 +69,73 @@ void load_program(const char *filename) {
 }
 
 
+InstrType get_instr_type (int opcode) {
+    if (opcode == 0 || opcode == 1 || opcode == 2 || opcode == 5 || opcode == 8 || opcode == 9) 
+        return R;
+    else if (opcode == 7)
+        return J;
+    return I;    
+}
+
 
 char* encode_instruction(char* plainInstruction){
+
     
 }
-char* encode_opcode(char* plainOpcode){
-
+char* encode_opcode(char* plainOpcode){  //passing only opcode 
+    if (strcmp(plainOpcode, "ADD") == 0) return "0000"; // WB = 0,1 MEMflag = 0,1
+    if (strcmp(plainOpcode, "SUB") == 0) return "0001";
+    if (strcmp(plainOpcode, "MUL") == 0) return "0010";
+    if (strcmp(plainOpcode, "MOVI") == 0) return "0011";
+    if (strcmp(plainOpcode, "JEQ") == 0) return "0100";
+    if (strcmp(plainOpcode, "AND") == 0) return "0101";
+    if (strcmp(plainOpcode, "XORI") == 0) return "0110";
+    if (strcmp(plainOpcode, "JMP") == 0) return "0111";
+    if (strcmp(plainOpcode, "LSL") == 0) return "1000";
+    if (strcmp(plainOpcode, "LSR") == 0) return "1001";
+    if (strcmp(plainOpcode, "MOVR") == 0) return "1010";
+    if (strcmp(plainOpcode, "MOVM") == 0) return "1011";
+    return "error";
 }
 char* encode_register(char* plainRegister){
-
+    if (strcmp(plainRegister, "R0") == 0) return "00000"; 
+    if (strcmp(plainRegister, "R1") == 0) return "00001";
+    if (strcmp(plainRegister, "R2") == 0) return "00010";
+    if (strcmp(plainRegister, "R3") == 0) return "00011";
+    if (strcmp(plainRegister, "R4") == 0) return "00100";
+    if (strcmp(plainRegister, "R5") == 0) return "00101";
+    if (strcmp(plainRegister, "R6") == 0) return "00110";
+    if (strcmp(plainRegister, "R7") == 0) return "00111";
+    if (strcmp(plainRegister, "R8") == 0) return "01000";
+    if (strcmp(plainRegister, "R9") == 0) return "01001";
+    if (strcmp(plainRegister, "R10") == 0) return "01010";
+    if (strcmp(plainRegister, "R11") == 0) return "01011";
+    if (strcmp(plainRegister, "R12") == 0) return "01100";
+    if (strcmp(plainRegister, "R13") == 0) return "01101";
+    if (strcmp(plainRegister, "R14") == 0) return "01110";
+    if (strcmp(plainRegister, "R15") == 0) return "01111";
+    if (strcmp(plainRegister, "R16") == 0) return "10000";
+    if (strcmp(plainRegister, "R17") == 0) return "10001";
+    if (strcmp(plainRegister, "R18") == 0) return "10010";
+    if (strcmp(plainRegister, "R19") == 0) return "10011";
+    if (strcmp(plainRegister, "R20") == 0) return "10100";
+    if (strcmp(plainRegister, "R21") == 0) return "10101";
+    if (strcmp(plainRegister, "R22") == 0) return "10110";
+    if (strcmp(plainRegister, "R23") == 0) return "10111";
+    if (strcmp(plainRegister, "R24") == 0) return "11000";
+    if (strcmp(plainRegister, "R25") == 0) return "11001";
+    if (strcmp(plainRegister, "R26") == 0) return "11010";
+    if (strcmp(plainRegister, "R27") == 0) return "11011";
+    if (strcmp(plainRegister, "R28") == 0) return "11100";
+    if (strcmp(plainRegister, "R29") == 0) return "11101";
+    if (strcmp(plainRegister, "R30") == 0) return "11110";
+    if (strcmp(plainRegister, "R31") == 0) return "11111";
+    return "error";
+    
 }
 char* encode_remaining(char* plain){
+    if( strcmp(plain,"shamt"))
+
 
 }
 InstrType get_instr_type (int opcode) {
