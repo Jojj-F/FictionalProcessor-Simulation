@@ -78,30 +78,53 @@ InstrType get_instr_type (int opcode) {
 }
 
 
-char* encode_instruction(char* plainInstruction){
-    char*s1;
-    char*s2;
-    char*s3;
-    char*s4;
-    char*s4;
+char* encode_instruction(char* plainInstruction){//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    int size=strlen(plainInstruction);
+    char opcode[5];char r1[3];char r2[3];char r3[3];
+    opcode[4]='\0';r1[0]='0';r1[2]='\0';r2[0]='0';r2[2]='\0';r3[0]='0';r3[2]='\0';
+    int getOpCode=1;int wR=1;
+    int i=0;
+    for(;i<size;i++){
+        if(plainInstruction[i]==' '){
+            if(i==3&&getOpCode)opcode[i]=' ';
+            getOpCode=0;
+        }
+        else if(getOpCode)
+            opcode[i]=plainInstruction[i];  
+        else if(plainInstruction[i]=='R'){
+            i++;
+            if(i+1<size && plainInstruction[i+1]!=' '){
+                if(wR==1) r1[0]=plainInstruction[i++];
+                else if(wR==2) r2[0]=plainInstruction[i++];
+                else r3[0]=plainInstruction[i++];
+            }
 
-    char* inst = encode_opcode(char* s1); //opcode of instruction
+            if(wR==1) r1[1]=plainInstruction[i];
+            else if(wR==2) r2[1]=plainInstruction[i];
+            else r3[1]=plainInstruction[i];
+            wR++;
+        }
+        else break;
+    }
+    int sizeRem=size-i;
+    char rem[sizeRem+1];rem[sizeRem]='\0';
+    int ptr=0;
+    while(i<size)rem[ptr++]=plainInstruction[i++];
 
-    InstrType t = get_instr_type(inst);
-        
-    
+    char* encodedOpCode=encode_opcode(opcode);
+
 }
 char* encode_opcode(char* plainOpcode){  //passing only opcode 
-    if (strcmp(plainOpcode, "ADD") == 0) return "0000"; // WB = 0,1 MEMflag = 0,1
-    if (strcmp(plainOpcode, "SUB") == 0) return "0001";
-    if (strcmp(plainOpcode, "MUL") == 0) return "0010";
+    if (strcmp(plainOpcode, "ADD ") == 0) return "0000"; // WB = 0,1 MEMflag = 0,1
+    if (strcmp(plainOpcode, "SUB ") == 0) return "0001";
+    if (strcmp(plainOpcode, "MUL ") == 0) return "0010";
     if (strcmp(plainOpcode, "MOVI") == 0) return "0011";
-    if (strcmp(plainOpcode, "JEQ") == 0) return "0100";
-    if (strcmp(plainOpcode, "AND") == 0) return "0101";
+    if (strcmp(plainOpcode, "JEQ ") == 0) return "0100";
+    if (strcmp(plainOpcode, "AND ") == 0) return "0101";
     if (strcmp(plainOpcode, "XORI") == 0) return "0110";
-    if (strcmp(plainOpcode, "JMP") == 0) return "0111";
-    if (strcmp(plainOpcode, "LSL") == 0) return "1000";
-    if (strcmp(plainOpcode, "LSR") == 0) return "1001";
+    if (strcmp(plainOpcode, "JMP ") == 0) return "0111";
+    if (strcmp(plainOpcode, "LSL ") == 0) return "1000";
+    if (strcmp(plainOpcode, "LSR ") == 0) return "1001";
     if (strcmp(plainOpcode, "MOVR") == 0) return "1010";
     if (strcmp(plainOpcode, "MOVM") == 0) return "1011";
     return "error";
@@ -142,7 +165,7 @@ char* encode_register(char* plainRegister){
     return "error";
     
 }
-char* encode_remaining(char* plain, InstrType t){
+char* encode_remaining(char* plain, InstrType t){//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     
 }
 
