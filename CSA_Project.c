@@ -70,16 +70,25 @@ void load_program(const char *filename) {
 
 
 InstrType get_instr_type (int opcode) {
-    if (opcode == 0 || opcode == 1 || opcode == 2 || opcode == 5 || opcode == 8 || opcode == 9) 
+    if (opcode == "0000" || opcode == "0001" || opcode == "0010" || opcode == "0101" || opcode == "1000" || opcode == "1001") 
         return R;
-    else if (opcode == 7)
+    else if (opcode == "0111")
         return J;
     return I;    
 }
 
 
 char* encode_instruction(char* plainInstruction){
+    char*s1;
+    char*s2;
+    char*s3;
+    char*s4;
+    char*s4;
 
+    char* inst = encode_opcode(char* s1); //opcode of instruction
+
+    InstrType t = get_instr_type(inst);
+        
     
 }
 char* encode_opcode(char* plainOpcode){  //passing only opcode 
@@ -133,22 +142,22 @@ char* encode_register(char* plainRegister){
     return "error";
     
 }
-char* encode_remaining(char* plain){
-    if( strcmp(plain,"shamt"))
-
-
+char* encode_remaining(char* plain, InstrType t){
+    
 }
-InstrType get_instr_type (int opcode) {
-    if (opcode == 0 || opcode == 1 || opcode == 2 || opcode == 5 || opcode == 8 || opcode == 9) 
-        return R;
-    else if (opcode == 7)
-        return J;
-    return I;    
+
+
+char* convertIntToBinary(int n, int size) {
+    char* str = malloc(size + 1); 
+    for (int i = size - 1; i >= 0; i--) {
+        str[i] = (n % 2) + '0';
+        n /= 2;
+    }
+    str[size] = '\0';
+    return str;
 }
 //=====================Program Logic========================
-void fetch(){
 
-}
 void decode(){
 
 }
