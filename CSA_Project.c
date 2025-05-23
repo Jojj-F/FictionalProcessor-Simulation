@@ -154,26 +154,52 @@ char* encode_instruction(char* plainInstruction){//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     char* encodedR3=convertIntToBinary(atoi(r3),5);
     InstrType type= get_instr_type(encodedOpCode);
     char* remaining;
-    if(type==R)remaining=convertIntToBinary(atoi(rem),13);
-    else if(type==I)remaining=convertIntToBinary(atoi(rem),18);
-    else remaining=convertIntToBinary(atoi(rem),28);
-
-
     int len_op = strlen(encodedOpCode);
-    int len_r1 = strlen(encodedR1);
-    int len_r2 = strlen(encodedR2);
-    int len_r3 = strlen(encodedR3);
-    int len_rem = strlen(remaining);
 
-    int total_len = len_op + len_r1 + len_r2 + len_r3 + len_rem;
+    if(type==R){
+        remaining=convertIntToBinary(atoi(rem),13);
+        int len_r1 = strlen(encodedR1);
+        int len_r2 = strlen(encodedR2);
+        int len_r3 = strlen(encodedR3);
+        int len_rem = strlen(remaining);
+         int total_len = len_op + len_r1 + len_r2 + len_r3 + len_rem;
+          char* merged = malloc(total_len + 1);
+        strcpy(merged, encodedOpCode);
+        strcat(merged, encodedR1);
+        strcat(merged, encodedR2);
+        strcat(merged, encodedR3);
+        strcat(merged, remaining);
+            return merged;
 
-    char* merged = malloc(total_len + 1);
-    strcpy(merged, encodedOpCode);
-    strcat(merged, encodedR1);
-    strcat(merged, encodedR2);
-    strcat(merged, encodedR3);
-    strcat(merged, remaining);
+    }
+    else if(type==I){
+        remaining=convertIntToBinary(atoi(rem),18);
+        int len_r1 = strlen(encodedR1);
+        int len_r2 = strlen(encodedR2);
+        int len_rem = strlen(remaining);
+        int total_len = len_op + len_r1 + len_r2  + len_rem;
+         char* merged = malloc(total_len + 1);
+        strcpy(merged, encodedOpCode);
+        strcat(merged, encodedR1);
+        strcat(merged, encodedR2);
+        strcat(merged, remaining);
+            return merged;
+
+    }
+
+    else{
+        remaining=convertIntToBinary(atoi(rem),28);
+         int len_rem = strlen(remaining);
+        int total_len = len_op  + len_rem;
+         char* merged = malloc(total_len + 1);
+        strcpy(merged, encodedOpCode);
+        strcat(merged, remaining);
     return merged;
+
+    }
+    
+
+   
 }
 
 void initialize_memory() {
@@ -194,7 +220,10 @@ void load_program(const char *filename) {
     char line[64];
     int index = 0;
     while (fgets(line, sizeof(line), file)) {
-        strcpy(mainMemory[index], encode_instruction(line));
+        char str[33];
+        strncpy(str, encode_instruction(line), 33);        
+        strncpy(mainMemory[index],str , 33);
+        mainMemory[index][32] = '\0'; // Ensure nul
         index++;
     }
     maxInstructionIndex=index;
@@ -267,7 +296,7 @@ void decode(Instruction* instr){
 }
 
 void execute(Instruction* inst, int cycle,int i){
-    printf("\n[Cycle %d] Executing: %s", cycle, inst->encodedInstruction);
+    printf("\n[Cycle %d] Executing: %s \n", cycle, inst->encodedInstruction);
 
     switch (inst->opcode) {
         case 0:
@@ -339,11 +368,11 @@ void memory(Instruction* inst){
     // Only process if instruction needs memory access
     if (inst->MEMflag) {
         printf("\n[Cycle %d] Memory Access: opcode=%d", programCycle, inst->opcode);
-        
+        int address;
         switch(inst->opcode) {
             case 10:  // MOVR (LOAD)
                 // Load from memory
-                int address = inst->operationResult;
+                address= inst->operationResult;
                 if (address < DATA_START || address > DATA_END) {
                     printf(" [ERROR] Invalid LOAD address %d\n", address);
                     break;
@@ -357,7 +386,7 @@ void memory(Instruction* inst){
             case 11:  // MOVM (STORE)
                 // Store to memory
                 
-                int address = inst->operationResult;
+                 address = inst->operationResult;
                 if (address < DATA_START || address > DATA_END) {
                     printf(" [ERROR] Invalid STORE address %d\n", address);
                     break;
@@ -378,18 +407,14 @@ void memory(Instruction* inst){
 }
 
 void write_back(Instruction* inst){
-    if (left > right) return; // No pipeline, no instructions to process
 
-    // Use the passed inst pointer, do not redeclare!
-    if (inst->instructionCycle != 5) return;  // Not in writeback stage
-    
     // Only process if instruction needs writeback
     if (inst->WBflag) {
-        printf("\n[Cycle %d] Write Back: opcode=%d", programCycle, inst->opcode);
+        printf("\n[Cycle %d] Write Back: opcode = %d \n", programCycle, inst->opcode);
         
        if (inst->r1 != 0) { //Register 0 handling 
             registerFile[inst->r1] = inst->operationResult;
-            printf(", Writing %d to R%d", inst->operationResult, inst->r1);
+            printf(", Writing %d to R%d \n", inst->operationResult, inst->r1);
         } else {
             // Still print that a write was attempted to R0 (required for logging)
             printf(", Attempted to write %d to R0 (ignored, R0 is always 0)", inst->operationResult);
@@ -463,9 +488,10 @@ void run(){
 }
 int main(){
     initialize_program();
+  
     run();
     print_registers();
-    print_memory();
+   // print_memory();
     return 0;
 }
 
