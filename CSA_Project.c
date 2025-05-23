@@ -51,6 +51,13 @@ void print_registers() {
     printf("Final PC = %u\n", pc);
 }
 
+void print_memory() {
+    printf("Memory content:\n");
+    for (int i = 0; i < MEMORY_SIZE; i++)
+        printf("MEM[%d] = %s\n", i, mainMemory[i]);
+}
+
+
 //=====================Helper Functions========================
 InstrType get_instr_type (char* opcode) {
     if (strcmp(opcode, "0000") == 0|| strcmp(opcode, "0001") == 0 ||strcmp(opcode, "0010") == 0 || strcmp(opcode, "0101") == 0 || strcmp(opcode, "1000") == 0||strcmp(opcode, "1001") == 0) 
@@ -281,8 +288,14 @@ void execute(Instruction* inst, int cycle,int i){
             break;
         case 4:
             right = i;
-            if (inst->operationResult == registerFile[inst->r2]) 
+            if (registerFile[inst->r1] == registerFile[inst->r2]) 
                 pc = pc + 1 + inst->imm;
+            int inst_count =  inst_count - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
+            // Flush the next 2 instructions in the pipeline 
+            // pipelinedInstructions[(i + 1) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
+            // pipelinedInstructions[(i + 2) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
+
+            // printf(" [Branch Taken] Flushed instructions at positions %d and %d\n", (i + 1) % MAX_PIPELINE_DEPTH, (i + 2) % MAX_PIPELINE_DEPTH);
             break;
         case 5:
             inst->operationResult = registerFile[inst->r2] & registerFile[inst->r3];
@@ -295,6 +308,12 @@ void execute(Instruction* inst, int cycle,int i){
         case 7:
             right = i;
             pc = (pc & 0xF0000000) | inst->address; // pc & 0xF0000000: masks the 1st 4-bits (31-28) of current pc  
+            int inst_count =  inst_count - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
+            // Flush the next two instructions
+            // pipelinedInstructions[(i + 1) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
+            // pipelinedInstructions[(i + 2) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
+
+            // printf(" [JUMP] Flushed instructions at positions %d and %d\n", (i + 1) % MAX_PIPELINE_DEPTH, (i + 2) % MAX_PIPELINE_DEPTH);
             return;
         case 8:
             inst->operationResult = registerFile[inst->r2] << inst->shamt;
@@ -446,6 +465,7 @@ int main(){
     initialize_program();
     run();
     print_registers();
+    print_memory();
     return 0;
 }
 
