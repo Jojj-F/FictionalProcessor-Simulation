@@ -24,7 +24,7 @@ uint32_t pc;
 typedef enum {R,I,J} InstrType;
 typedef enum {F,D,E,M,W} CyclePhase;
 typedef struct {
-    char encodedInstruction[33  ]; 
+    char encodedInstruction[33]; 
     int instructionCycle; // to be set = 1 
     int operationResult;
     //After Decoding the below values should be filled
@@ -204,7 +204,10 @@ void fetch(){
     right=(right+1)%4; //first do add then fetch put into pipleined instructions array index right
     Instruction instr;
     strcpy(instr.encodedInstruction, mainMemory[pc]);
+    instr.instructionCycle=1;
     pc++;
+        printf("Fetching  %d %d \n",right,instr.instructionCycle);
+
     pipelinedInstructions[right] =instr;
 }
 
@@ -354,33 +357,38 @@ void write_back(Instruction* inst){
 
 //=====================Pipeline Logic=======================
 int isFull(){
-    return totalPipelined=4;
+    return totalPipelined==MAX_PIPELINE_DEPTH;
 }
 int isEmpty(){
     return totalPipelined==0;
 }
+int fatalerror=0;
 void pipeline() {
     int i = left;
-    while (1) {
+    while (!isEmpty()) {
         int cycle = pipelinedInstructions[i].instructionCycle;
-
-        // Enforce your constraints:
-        if (programCycle % 2 == 1) {
-            // Odd cycle: allow IF (instructionCycle == 1) but skip MEM (5)
-            if (cycle == 5) {
-                i = (i + 1) % MAX_PIPELINE_DEPTH;
-                if (i == (right + 1) % MAX_PIPELINE_DEPTH) break;
-                continue;
-            }
-        } else {
-            // Even cycle: allow MEM (5), but skip IF (1)
-            if (cycle == 1) {
-                i = (i + 1) % MAX_PIPELINE_DEPTH;
-                if (i == (right + 1) % MAX_PIPELINE_DEPTH) break;
-                continue;
-            }
+        if(cycle>=7){
+            fatalerror=1;
+            printf("FATAL ERROR OCCURED %d %d %d %d \n",i,left,right,cycle);
+            return;
         }
-
+        // // Enforce your constraints:
+        // if (programCycle % 2 == 1) {
+        //     // Odd cycle: allow IF (instructionCycle == 1) but skip MEM (5)
+        //     if (cycle == 5) {
+        //         i = (i + 1) % MAX_PIPELINE_DEPTH;
+        //         if (i == (right + 1) % MAX_PIPELINE_DEPTH) break;
+        //         continue;
+        //     }
+        // } else {
+        //     // Even cycle: allow MEM (5), but skip IF (1)
+        //     if (cycle == 1) {
+        //         i = (i + 1) % MAX_PIPELINE_DEPTH;
+        //         if (i == (right + 1) % MAX_PIPELINE_DEPTH) break;
+        //         continue;
+        //     }
+        // }
+        printf("%d %d %d %d \n",i,left,right,cycle);
         switch(cycle){
             case 1: decode(&pipelinedInstructions[i]);
             case 2: break;
@@ -390,14 +398,15 @@ void pipeline() {
             case 6: write_back(&pipelinedInstructions[i]);
         }
         pipelinedInstructions[i].instructionCycle++;
-
         if (i == right) break;
+
         i = (i + 1) % MAX_PIPELINE_DEPTH;
     }
+    if (!isEmpty()&&pipelinedInstructions[left].instructionCycle == 7){
+    
+        left = (left + 1) % MAX_PIPELINE_DEPTH;totalPipelined--;}
 
-    if (pipelinedInstructions[left].instructionCycle == 7){ left = (left + 1) % MAX_PIPELINE_DEPTH;totalPipelined--;}
-
-    if (programCycle % 2 == 1 && !isFull()) {
+    if (programCycle % 2 == 1 && !isFull()&&pc<maxInstructionIndex) {
         fetch();
         totalPipelined++;
     }
@@ -406,7 +415,7 @@ void pipeline() {
 }
 
 void run(){
-    while(pc<maxInstructionIndex || !isEmpty())
+    while(!fatalerror&&(pc<maxInstructionIndex || !isEmpty()))
         pipeline();
 }
 int main(){
