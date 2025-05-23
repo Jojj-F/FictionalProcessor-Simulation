@@ -27,6 +27,7 @@ typedef struct {
     char encodedInstruction[33]; 
     int instructionCycle; // to be set = 1 
     int operationResult;
+    int oldpc;
     //After Decoding the below values should be filled
     InstrType type;
     int32_t imm; //signed immediate values 
@@ -43,7 +44,10 @@ int programCycle=1;
 //==========================================Code==========================================
 //=====================Printing===============================
 void print_clock_cycle_data(){
-    //TODO <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    int i = left;
+    while (!isEmpty()) {//TODO <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    }   
 }
 void print_registers() {
     printf("Register values :\n");
@@ -247,6 +251,7 @@ void fetch(){
         printf("Fetching  %d %d \n",right,instr.instructionCycle);
 
     pipelinedInstructions[right] =instr;
+    instr.oldpc=pc;
 }
 
 void decode(Instruction* instr){
@@ -320,7 +325,7 @@ void execute(Instruction* inst, int cycle,int i){
         case 4:
             right = i;
             if (registerFile[inst->r1] == registerFile[inst->r2]) 
-                pc = pc + inst->imm;
+                pc = inst->oldpc + inst->imm;
             totalPipelined=  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
             // Flush the next 2 instructions in the pipeline 
             // pipelinedInstructions[(i + 1) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
@@ -338,7 +343,7 @@ void execute(Instruction* inst, int cycle,int i){
             break;
         case 7:
             right = i;
-            pc = (pc & 0xF0000000) | inst->address; // pc & 0xF0000000: masks the 1st 4-bits (31-28) of current pc  
+            pc = (inst->oldpc & 0xF0000000) | inst->address; // pc & 0xF0000000: masks the 1st 4-bits (31-28) of current pc  
             totalPipelined =  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
             // Flush the next two instructions
             // pipelinedInstructions[(i + 1) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
@@ -393,7 +398,7 @@ void memory(Instruction* inst){
                     printf(" [ERROR] Invalid STORE address %d\n", address);
                     break;
                 }                
-
+                printf(", Old MEM[%d] = %s", address, mainMemory[address]);
                 char* binaryVal = convertIntToBinary(registerFile[inst->r1], 32);
 
                 strcpy(mainMemory[address], binaryVal);
@@ -415,8 +420,8 @@ void write_back(Instruction* inst){
         printf("\n[Cycle %d] Write Back: opcode = %d \n", programCycle, inst->opcode);
         
        if (inst->r1 != 0) { //Register 0 handling 
+            printf(", Changing %d to %d in  R %d \n",registerFile[inst->r1], inst->operationResult, inst->r1);
             registerFile[inst->r1] = inst->operationResult;
-            printf(", Writing %d to R%d \n", inst->operationResult, inst->r1);
         } else {
             // Still print that a write was attempted to R0 (required for logging)
             printf(", Attempted to write %d to R0 (ignored, R0 is always 0)", inst->operationResult);
