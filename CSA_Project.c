@@ -349,10 +349,16 @@ void write_back(Instruction* inst){
     // Only process if instruction needs writeback
     if (inst->WBflag) {
         printf("\n[Cycle %d] Write Back: opcode=%d", programCycle, inst->opcode);
-        // This line is redundant, but keeping it as in your code:
-        inst->operationResult = inst->operationResult;
-        printf(", Writing %d to R%d", inst->operationResult, inst->r1);
+        
+       if (inst->r1 != 0) { //Register 0 handling 
+            registerFile[inst->r1] = inst->operationResult;
+            printf(", Writing %d to R%d", inst->operationResult, inst->r1);
+        } else {
+            // Still print that a write was attempted to R0 (required for logging)
+            printf(", Attempted to write %d to R0 (ignored, R0 is always 0)", inst->operationResult);
+        }
     }
+    
 }
 
 //=====================Pipeline Logic=======================
