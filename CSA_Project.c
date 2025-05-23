@@ -290,7 +290,7 @@ void execute(Instruction* inst, int cycle,int i){
             right = i;
             if (registerFile[inst->r1] == registerFile[inst->r2]) 
                 pc = pc + 1 + inst->imm;
-            int inst_count =  inst_count - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
+            totalPipelined=  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
             // Flush the next 2 instructions in the pipeline 
             // pipelinedInstructions[(i + 1) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
             // pipelinedInstructions[(i + 2) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
@@ -308,7 +308,7 @@ void execute(Instruction* inst, int cycle,int i){
         case 7:
             right = i;
             pc = (pc & 0xF0000000) | inst->address; // pc & 0xF0000000: masks the 1st 4-bits (31-28) of current pc  
-            int inst_count =  inst_count - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
+            totalPipelined =  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
             // Flush the next two instructions
             // pipelinedInstructions[(i + 1) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
             // pipelinedInstructions[(i + 2) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
