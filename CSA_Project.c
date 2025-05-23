@@ -14,7 +14,8 @@
 #define REGISTER_NO 32 
 #define MAX_PIPELINE_DEPTH  4
 //=====================Memory=====================
-char mainMemory[MEMORY_SIZE][33]; //TODO change to carry binary string <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+char mainMemory[MEMORY_SIZE][33];
+int maxInstructionIndex;
 //=====================registerFile==================
 uint32_t registerFile[REGISTER_NO]; 
 uint32_t pc;
@@ -37,6 +38,7 @@ typedef struct {
 Instruction pipelinedInstructions[MAX_PIPELINE_DEPTH];
 int left=0; 
 int right=-1;
+int totalPipelined=0;
 int programCycle=1; 
 //==========================================Code==========================================
 //=====================Helper Functions========================
@@ -179,13 +181,14 @@ void load_program(const char *filename) {
         strcpy(mainMemory[index], encode_instruction(line));
         index++;
     }
+    maxInstructionIndex=index;
     fclose(file);
 }
 
 void initialize_program(){
     initialize_memory();
     initialize_registerFile();
-    load_program("Temporary"); //TODO change<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    load_program("assembly.txt"); 
 }
 //=====================Program Logic========================
 void fetch(){
@@ -342,9 +345,10 @@ void write_back(Instruction* inst){
 
 //=====================Pipeline Logic=======================
 int isFull(){
-    if(left<right&&right-left==3 || right<left &&right+1==left)
-        return 1;
-    return 0;
+    return totalPipelined!=0;
+}
+int isEmpty(){
+    return totalPipelined==0;
 }
 void pipeline() {
     int i = left;
@@ -382,18 +386,18 @@ void pipeline() {
         i = (i + 1) % MAX_PIPELINE_DEPTH;
     }
 
-    if (pipelinedInstructions[left].instructionCycle == 7) left = (left + 1) % MAX_PIPELINE_DEPTH;
+    if (pipelinedInstructions[left].instructionCycle == 7){ left = (left + 1) % MAX_PIPELINE_DEPTH;totalPipelined--;}
 
     if (programCycle % 2 == 1 && !isFull()) {
         fetch();
+        totalPipelined++;
     }
 
     programCycle++;
 }
 
 void run(){
-    int runProgram=1;//TODO change<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    while(runProgram)
+    while(pc<maxInstructionIndex || !isEmpty())
         pipeline();
 }
 int main(){
