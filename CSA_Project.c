@@ -255,6 +255,8 @@ void decode(Instruction* instr){
         ad[28] = '\0';
         instr->address = strtol(ad, NULL, 2);
     }
+    printf("[Cycle %d] Stage: Decode | Instruction: %s | R1=%d R2=%d R3=%d IMM=%d SHAMT=%d ADDR=%d\n", programCycle, instr->encodedInstruction, instr->r1, instr->r2, instr->r3, instr->imm, instr->shamt, instr->address); // instruction output per cycle 
+
 }
 
 void execute(Instruction* inst, int cycle,int i){
@@ -315,29 +317,45 @@ void execute(Instruction* inst, int cycle,int i){
 }
 
 void memory(Instruction* inst){
-    // if (left > right) return;  // No instructions to process
-
-    // // Use the passed inst pointer, do not redeclare!
-    // if (inst->instructionCycle != 4) return;  // Not in memory stage
-    
-    // // Only process if instruction needs memory access
-    // if (inst->MEMflag) {
-    //     printf("\n[Cycle %d] Memory Access: opcode=%d", programCycle, inst->opcode);
+    // Only process if instruction needs memory access
+    if (inst->MEMflag) {
+        printf("\n[Cycle %d] Memory Access: opcode=%d", programCycle, inst->opcode);
         
-    //     switch(inst->opcode) {
-    //         case 10:  // LOAD
-    //             // Load from memory
-    //             inst->operationResult = mainMemory[inst->operationResult];
-    //             printf(", Loading from address %d", inst->operationResult);
-    //             break;
+        switch(inst->opcode) {
+            case 10:  // MOVR (LOAD)
+                // Load from memory
+                int address = inst->operationResult;
+                if (address < DATA_START || address > DATA_END) {
+                    printf(" [ERROR] Invalid LOAD address %d\n", address);
+                    break;
+                }
+
+                char* result = mainMemory[address]; // accessing the result from the memory 
+                inst->operationResult = (int32_t)strtol(result, NULL, 2); //converting the binary result t int
+                printf(", Loaded from  MEM[%d] = %s (as %d)", address, result, inst->operationResult);
+                break;
                 
-    //         case 11:  // STORE
-    //             // Store to memory
-    //             strcpy(mainMemory[inst->operationResult], registerFile[inst->r1]);
-    //             printf(", Storing to address %d", inst->operationResult);
-    //             break;
-    //     }
-    // }
+            case 11:  // MOVM (STORE)
+                // Store to memory
+                
+                int address = inst->operationResult;
+                if (address < DATA_START || address > DATA_END) {
+                    printf(" [ERROR] Invalid STORE address %d\n", address);
+                    break;
+                }                
+
+                char* binaryVal = convertIntToBinary(registerFile[inst->r1], 32);
+
+                strcpy(mainMemory[address], binaryVal);
+                printf(", Stored to  R%d = %d (as %s) to MEM[%d]", inst->r1, registerFile[inst->r1], binaryVal, address);
+                free(binaryVal); // prevent memory leak
+                break;
+            
+                default:
+                // For instructions that reach MEM but don't use it
+                printf(" (No memory access for this instruction)");                    
+        }
+    }
 }
 
 void write_back(Instruction* inst){
