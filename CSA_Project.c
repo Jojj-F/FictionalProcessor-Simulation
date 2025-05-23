@@ -42,7 +42,9 @@ int totalPipelined=0;
 int programCycle=1; 
 //==========================================Code==========================================
 //=====================Printing===============================
-
+void print_clock_cycle_data(){
+    //TODO <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+}
 void print_registers() {
     printf("Register values :\n");
     for (int i = 1; i <= 6; i++) {
@@ -318,7 +320,7 @@ void execute(Instruction* inst, int cycle,int i){
         case 4:
             right = i;
             if (registerFile[inst->r1] == registerFile[inst->r2]) 
-                pc = pc + 1 + inst->imm;
+                pc = pc + inst->imm;
             totalPipelined=  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
             // Flush the next 2 instructions in the pipeline 
             // pipelinedInstructions[(i + 1) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
@@ -478,7 +480,7 @@ void pipeline() {
         fetch();
         totalPipelined++;
     }
-
+    //print clockcycle data
     programCycle++;
 }
 
