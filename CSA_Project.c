@@ -43,14 +43,14 @@ int totalPipelined=0;
 int programCycle=1; 
 //==========================================Code==========================================
 //=====================Printing===============================
-void print_clock_cycle_data(){
-    int i = left;
-    while (!isEmpty()) {//TODO <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// void print_clock_cycle_data(){
+//     int i = left;
+//     while (!isEmpty()) {//TODO <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    }   
-}
+//     }   
+// }
 void print_registers() {
-    printf("Register values :\n");
+    printf("\nRegister values :\n");
     for (int i = 1; i <= 6; i++) {
         printf("R%d = %d (0x%X)\n", i, registerFile[i], registerFile[i]);
     }
@@ -248,8 +248,7 @@ void fetch(){
     strcpy(instr.encodedInstruction, mainMemory[pc]);
     instr.instructionCycle=1;
     pc++;
-        printf("Fetching  %d %d \n",right,instr.instructionCycle);
-
+        printf("\n[Cycle %d] Fetching | %d | instruction cycle: %d \n", programCycle, right, instr.instructionCycle);
     pipelinedInstructions[right] =instr;
     instr.oldpc=pc;
 }
@@ -298,12 +297,12 @@ void decode(Instruction* instr){
         ad[28] = '\0';
         instr->address = strtol(ad, NULL, 2);
     }
-    printf("[Cycle %d] Stage: Decode | Instruction: %s | R1=%d R2=%d R3=%d IMM=%d SHAMT=%d ADDR=%d\n", programCycle, instr->encodedInstruction, instr->r1, instr->r2, instr->r3, instr->imm, instr->shamt, instr->address); // instruction output per cycle 
+    printf("\n[Cycle %d] Stage: Decoding | Instruction: %s | R1=%d R2=%d R3=%d IMM=%d SHAMT=%d ADDR=%d\n", programCycle, instr->encodedInstruction, instr->r1, instr->r2, instr->r3, instr->imm, instr->shamt, instr->address); // instruction output per cycle 
 
 }
 
 void execute(Instruction* inst, int cycle,int i){
-    printf("\n[Cycle %d] Executing: %s \n", cycle, inst->encodedInstruction);
+    printf("\n[Cycle %d] Executing | Instruction:: %s \n", cycle, inst->encodedInstruction);
 
     switch (inst->opcode) {
         case 0:
@@ -374,7 +373,7 @@ void execute(Instruction* inst, int cycle,int i){
 void memory(Instruction* inst){
     // Only process if instruction needs memory access
     if (inst->MEMflag) {
-        printf("\n[Cycle %d] Memory Access: opcode=%d", programCycle, inst->opcode);
+        printf("\n[Cycle %d] Memory Access: opcode=%d \n", programCycle, inst->opcode);
         int address;
         switch(inst->opcode) {
             case 10:  // MOVR (LOAD)
@@ -408,7 +407,7 @@ void memory(Instruction* inst){
             
                 default:
                 // For instructions that reach MEM but don't use it
-                printf(" (No memory access for this instruction)");                    
+                printf(" (No memory access for this instruction) \n");                    
         }
     }
 }
@@ -424,7 +423,7 @@ void write_back(Instruction* inst){
             registerFile[inst->r1] = inst->operationResult;
         } else {
             // Still print that a write was attempted to R0 (required for logging)
-            printf(", Attempted to write %d to R0 (ignored, R0 is always 0)", inst->operationResult);
+            printf(", Attempted to write %d to R0 (ignored, R0 is always 0) \n", inst->operationResult);
         }
     }
     
@@ -463,7 +462,7 @@ void pipeline() {
         //         continue;
         //     }
         // }
-        printf("%d %d %d %d \n",i,left,right,cycle);
+        //printf(" %d %d %d %d \n",i,left,right,cycle);
         switch(cycle){
             case 1: decode(&pipelinedInstructions[i]);
             case 2: break;
