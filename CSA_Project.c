@@ -41,6 +41,16 @@ int right=-1;
 int totalPipelined=0;
 int programCycle=1; 
 //==========================================Code==========================================
+//=====================Printing===============================
+
+void print_registers() {
+    printf("Register values :\n");
+    for (int i = 1; i <= 6; i++) {
+        printf("R%d = %d (0x%X)\n", i, registerFile[i], registerFile[i]);
+    }
+    printf("Final PC = %u\n", pc);
+}
+
 //=====================Helper Functions========================
 InstrType get_instr_type (char* opcode) {
     if (strcmp(opcode, "0000") == 0|| strcmp(opcode, "0001") == 0 ||strcmp(opcode, "0010") == 0 || strcmp(opcode, "0101") == 0 || strcmp(opcode, "1000") == 0||strcmp(opcode, "1001") == 0) 
@@ -403,27 +413,7 @@ void run(){
 int main(){
     initialize_program();
     run();
+    print_registers();
     return 0;
 }
 
-//=====================Uncategorized=======================
-
-// void test_initialization(){
-//     printf("\n>>> Running Milestone 1 Test\n");
-//     print_registerFile();
-//     print_memory(0, 10);                      // Instructions region
-//     print_memory(DataStart, DataStart + 6); // Start of data segment
-// }
-// void print_registerFile(){
-//     for(int i = 0; i < RegisterNo; i++){
-//         printf("R%-2d: %08X\n", i, registerFile[i]); //prints the value of each register in hexadecimal digits
-//     }
-//     printf("pc: %08X\n", pc); //current value of pc
-// }
-
-// void print_memory(int from, int to){
-//     for(int i = from; i <= to && i < MemorySize; i++){
-//         printf("MEM[%4d]: %08X\n", i, memory[i]);
-//     }
-
-// }
