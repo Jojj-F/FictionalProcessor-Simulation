@@ -307,6 +307,7 @@ void execute(Instruction* inst, int cycle,int i){
     switch (inst->opcode) {
         case 0:
             inst->operationResult = registerFile[inst->r2] + registerFile[inst->r3];
+            printf("TESTING: result %d r2 %d r3 %d", inst->operationResult, registerFile[inst->r2], registerFile[inst->r3]);
             inst->WBflag = 1; 
             break;
         case 1:
@@ -342,7 +343,7 @@ void execute(Instruction* inst, int cycle,int i){
             break;
         case 7:
             right = i;
-            pc = (inst->oldpc & 0xF0000000) | inst->address; // pc & 0xF0000000: masks the 1st 4-bits (31-28) of current pc  
+            pc = (inst->oldpc & 0x0FFFFFFF) | inst->address;  
             totalPipelined =  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
             // Flush the next two instructions
             // pipelinedInstructions[(i + 1) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
