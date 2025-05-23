@@ -345,7 +345,7 @@ void write_back(Instruction* inst){
 
 //=====================Pipeline Logic=======================
 int isFull(){
-    return totalPipelined!=0;
+    return totalPipelined=4;
 }
 int isEmpty(){
     return totalPipelined==0;
