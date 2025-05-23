@@ -166,7 +166,6 @@ char* encode_instruction(char* plainInstruction){//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     strcat(merged, encodedR2);
     strcat(merged, encodedR3);
     strcat(merged, remaining);
-    printf("Merged binary string: %s\n", merged);
     return merged;
 }
 
@@ -313,29 +312,29 @@ void execute(Instruction* inst, int cycle,int i){
 }
 
 void memory(Instruction* inst){
-    if (left > right) return;  // No instructions to process
+    // if (left > right) return;  // No instructions to process
 
-    // Use the passed inst pointer, do not redeclare!
-    if (inst->instructionCycle != 4) return;  // Not in memory stage
+    // // Use the passed inst pointer, do not redeclare!
+    // if (inst->instructionCycle != 4) return;  // Not in memory stage
     
-    // Only process if instruction needs memory access
-    if (inst->MEMflag) {
-        printf("\n[Cycle %d] Memory Access: opcode=%d", programCycle, inst->opcode);
+    // // Only process if instruction needs memory access
+    // if (inst->MEMflag) {
+    //     printf("\n[Cycle %d] Memory Access: opcode=%d", programCycle, inst->opcode);
         
-        switch(inst->opcode) {
-            case 10:  // LOAD
-                // Load from memory
-                inst->operationResult = mainMemory[inst->operationResult];
-                printf(", Loading from address %d", inst->operationResult);
-                break;
+    //     switch(inst->opcode) {
+    //         case 10:  // LOAD
+    //             // Load from memory
+    //             inst->operationResult = mainMemory[inst->operationResult];
+    //             printf(", Loading from address %d", inst->operationResult);
+    //             break;
                 
-            case 11:  // STORE
-                // Store to memory
-                strcpy(mainMemory[inst->operationResult], registerFile[inst->r1]);
-                printf(", Storing to address %d", inst->operationResult);
-                break;
-        }
-    }
+    //         case 11:  // STORE
+    //             // Store to memory
+    //             strcpy(mainMemory[inst->operationResult], registerFile[inst->r1]);
+    //             printf(", Storing to address %d", inst->operationResult);
+    //             break;
+    //     }
+    // }
 }
 
 void write_back(Instruction* inst){
