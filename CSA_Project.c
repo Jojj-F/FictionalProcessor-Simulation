@@ -42,11 +42,12 @@ int right=-1;
 int totalPipelined=0;
 int programCycle=1; 
 int totalFetched=0;
+int totalDataHazardDelay=0;
 //==========================================Code==========================================
 //=====================Printing===============================
 void print_registers() {
     printf("\nRegister values :\n");
-    for (int i = 1; i <= 6; i++) {
+    for (int i = 1; i <= 12; i++) {
         printf("R%d = %d (0x%X)\n", i, registerFile[i], registerFile[i]);
     }
     printf("Final PC = %u\n", pc);
@@ -272,12 +273,13 @@ void fetch(){
     instr.instructionCycle=2;
     pc++;
     instr.instructionID=++totalFetched;
-    printf("\n[Cycle %d] Fetching instruction number: %d | instruction cycle: 1 \n", programCycle, instr.instructionID);
+    printf("\nPhase: Fetch | Instruction Number : %d \n",instr.instructionID);
+    //printf("\n[Cycle %d] Fetching instruction number: %d | instruction cycle: 1 \n", programCycle, instr.instructionID);
     pipelinedInstructions[right] =instr;
     instr.oldpc=pc;
 }
-void setInstructionVariables(Instruction* instr){
-    instr->type = get_instr_type(instr->opcode);
+void setInstructionVariables(Instruction* instr, char* opcode){
+    instr->type = get_instr_type(opcode);
     instr->instrName = malloc(strlen(getInstructionName(instr->opcode)) + 1);
     strcpy(instr->instrName, getInstructionName(instr->opcode));
     switch(instr->opcode){
@@ -301,7 +303,7 @@ void decode(Instruction* instr){
     strncpy(opcode, instr->encodedInstruction, 4);
     opcode[4]='\0';
     instr->opcode = strtol(opcode, NULL, 2);
-    setInstructionVariables(instr);
+    setInstructionVariables(instr, opcode);
     if(instr->type == R){   
         memcpy(er1, instr->encodedInstruction + 4, 5); 
         er1[5] = '\0';
@@ -335,17 +337,17 @@ void decode(Instruction* instr){
         ad[28] = '\0';
         instr->address = strtol(ad, NULL, 2);
     }
-    printf("\n[Cycle %d] Stage: Decoding | Instruction Number: %d | Instruction: %s | R1=%d R2=%d R3=%d IMM=%d SHAMT=%d ADDR=%d\n", programCycle,instr->instructionID, instr->encodedInstruction, instr->r1, instr->r2, instr->r3, instr->imm, instr->shamt, instr->address); // instruction output per cycle 
+   // printf("\n[Cycle %d] Stage: Decoding | Instruction Number: %d | Instruction: %s | R1=%d R2=%d R3=%d IMM=%d SHAMT=%d ADDR=%d\n", programCycle,instr->instructionID, instr->encodedInstruction, instr->r1, instr->r2, instr->r3, instr->imm, instr->shamt, instr->address); // instruction output per cycle 
 
 }
 
 void execute(Instruction* inst, int cycle,int i){
-    printf("\n[Cycle %d] Stage: Executing | Instruction Number: %d \n", cycle, inst->instructionID);
+    //printf("\n[Cycle %d] Stage: Executing | Instruction Number: %d \n", cycle, inst->instructionID);
 
     switch (inst->opcode) {
         case 0: //ADD
             inst->operationResult = registerFile[inst->r2] + registerFile[inst->r3];
-            printf("TESTING: result %d r2 %d r3 %d", inst->operationResult, registerFile[inst->r2], registerFile[inst->r3]);
+         //   printf("TESTING: result %d r2 %d r3 %d", inst->operationResult, registerFile[inst->r2], registerFile[inst->r3]);
             break;
         case 1: //SUB
             inst->operationResult = registerFile[inst->r2] - registerFile[inst->r3];
@@ -391,20 +393,20 @@ void execute(Instruction* inst, int cycle,int i){
 void memory(Instruction* inst){
     // Only process if instruction needs memory access
     if (inst->MEMflag) {
-        printf("\n[Cycle %d] Memory Access: opcode=%d \n", programCycle, inst->opcode);
+       // printf("\n[Cycle %d] Memory Access: opcode=%d \n", programCycle, inst->opcode);
         int address;
         switch(inst->opcode) {
             case 10:  // MOVR (LOAD)
                 // Load from memory
                 address= inst->operationResult;
                 if (address < DATA_START || address > DATA_END) {
-                    printf(" [ERROR] Invalid LOAD address %d\n", address);
+               //     printf(" [ERROR] Invalid LOAD address %d\n", address);
                     break;
                 }
 
                 char* result = mainMemory[address]; // accessing the result from the memory 
                 inst->operationResult = (int32_t)strtol(result, NULL, 2); //converting the binary result t int
-                printf(", Loaded from  MEM[%d] = %s (as %d)", address, result, inst->operationResult);
+          //      printf(", Loaded from  MEM[%d] = %s (as %d)", address, result, inst->operationResult);
                 break;
                 
             case 11:  // MOVM (STORE)
@@ -412,96 +414,117 @@ void memory(Instruction* inst){
                 
                  address = inst->operationResult;
                 if (address < DATA_START || address > DATA_END) {
-                    printf(" [ERROR] Invalid STORE address %d\n", address);
+             //       printf(" [ERROR] Invalid STORE address %d\n", address);
                     break;
                 }                
-                printf(", Old MEM[%d] = %s", address, mainMemory[address]);
+//printf(", Old MEM[%d] = %s", address, mainMemory[address]);
                 char* binaryVal = convertIntToBinary(registerFile[inst->r1], 32);
 
                 strcpy(mainMemory[address], binaryVal);
-                printf(", Stored to  R%d = %d (as %s) to MEM[%d]", inst->r1, registerFile[inst->r1], binaryVal, address);
+               // printf(", Stored to  R%d = %d (as %s) to MEM[%d]", inst->r1, registerFile[inst->r1], binaryVal, address);
                 free(binaryVal); // prevent memory leak
                 break;
             
                 default:
                 // For instructions that reach MEM but don't use it
-                printf(" (No memory access for this instruction) \n");                    
+              //  printf(" (No memory access for this instruction) \n");                    
         }
     }
 }
 
 void write_back(Instruction* inst){
-
     // Only process if instruction needs writeback
     if (inst->WBflag) {
-        printf("\n[Cycle %d] Write Back: opcode = %d \n", programCycle, inst->opcode);
+      //  printf("\n[Cycle %d] Write Back: opcode = %d \n", programCycle, inst->opcode);
         
        if (inst->r1 != 0) { //Register 0 handling 
-            printf(", Changing %d to %d in  R %d \n",registerFile[inst->r1], inst->operationResult, inst->r1);
+            //printf(", Changing %d to %d in  R %d \n",registerFile[inst->r1], inst->operationResult, inst->r1);
             registerFile[inst->r1] = inst->operationResult;
         } else {
             // Still print that a write was attempted to R0 (required for logging)
-            printf(", Attempted to write %d to R0 (ignored, R0 is always 0) \n", inst->operationResult);
+           // printf(", Attempted to write %d to R0 (ignored, R0 is always 0) \n", inst->operationResult);
         }
     }
     
 }
 
 //=====================Pipeline Logic=======================
-int dataHazard(int i){
-    int j=left;
-    while (!isEmpty()) {
-        if (j == i) break;
-        if(pipelinedInstructions[j].instructionCycle<6&&pipelinedInstructions[j].MEMflag){
-            // How to stop memory idk?
-
-        }else if((pipelinedInstructions[j].instructionCycle<7&&pipelinedInstructions[j].WBflag))
-            if(pipelinedInstructions[j].r1 ==pipelinedInstructions[i].r2 ||pipelinedInstructions[j].r1 ==pipelinedInstructions[i].r3 )
-                return 1;
-        j = (j + 1) % MAX_PIPELINE_DEPTH;
-    }
-    return 0;
-}
 int isFull(){
     return totalPipelined==MAX_PIPELINE_DEPTH;
 }
 int isEmpty(){
     return totalPipelined==0;
 }
-int fatalerror=0;
-void pipeline() {
-    int i = left;
+int dataHazard(int i){
+    int j=left;
     while (!isEmpty()) {
-        if (i == right) break;
+        if (j == i) break;
+        if(pipelinedInstructions[j].instructionCycle<=6&&pipelinedInstructions[j].MEMflag){
+            // How to stop memory idk?
+
+        }else if((pipelinedInstructions[j].instructionCycle<=7&&pipelinedInstructions[j].WBflag))
+            if(pipelinedInstructions[j].r1 ==pipelinedInstructions[i].r2 ||pipelinedInstructions[j].r1 ==pipelinedInstructions[i].r3 )
+                return 1;
+
+        j = (j + 1) % MAX_PIPELINE_DEPTH;
+    }
+    return 0;
+}
+int fatalHazard=0;
+void pipeline() {
+    int i = left;int dataHazardOccured=0;
+    printf("[Starting Clock Cycle: %d] \n",programCycle);
+    while (!isEmpty()) {
+       // printf("Entering aaaaaaaaaaaaaaaaaa with clockcycle %d \n",programCycle);
         int cycle = pipelinedInstructions[i].instructionCycle;
-        if(dataHazard(i)){
-            printf("Data Hazard Detected Will delay all instructions by 1 clock cycle");
+        if(cycle>=8){
+            fatalHazard=1;
+            printf("FATAL HAZARD OCCURED because of %d \n",pipelinedInstructions[i].instructionID);
+            return;
+        }
+        printf("left: %d ,right: %d ,current: %d , totalPipelined: %d cycle: %d \n", left,right,i,totalPipelined, cycle);
+
+        if(cycle >=4 && dataHazard(i)){
+            dataHazardOccured=1;
+            totalDataHazardDelay++;
+            printf("Data Hazard Detected in instruction %d Will delay all instructions by 1 clock cycle \n",pipelinedInstructions[i].instructionID);
             break;
         }
         switch(cycle){
-            case 2: decode(&pipelinedInstructions[i]);
-            case 3: break;
-            case 4: execute(&pipelinedInstructions[i], cycle, i);
-            case 5: break;
-            case 6: memory(&pipelinedInstructions[i]); break;
-            case 7: write_back(&pipelinedInstructions[i]);
+            case 2:
+            printf("\nPhase: Decode | Instruction Number : %d \n",pipelinedInstructions[i].instructionID);
+            decode(&pipelinedInstructions[i]);break;
+            case 3:printf("\nPhase: Dummy Decode | Instruction Number : %d \n",pipelinedInstructions[i].instructionID);break;
+            case 4:
+            printf("\nPhase: Execute | Instruction Number : %d \n",pipelinedInstructions[i].instructionID);
+            execute(&pipelinedInstructions[i], cycle, i);break;
+            case 5:printf("\nPhase: Dummy Execute | Instruction Number : %d \n",pipelinedInstructions[i].instructionID); break;
+            case 6:
+            printf("\nPhase: Memory | Instruction Number : %d \n",pipelinedInstructions[i].instructionID);
+            memory(&pipelinedInstructions[i]); break;
+            case 7:printf("\nPhase: Write Back |Instruction Number : %d \n",pipelinedInstructions[i].instructionID); 
+            write_back(&pipelinedInstructions[i]);
         }
         pipelinedInstructions[i].instructionCycle++;
+        if (i == right) break;
 
         i = (i + 1) % MAX_PIPELINE_DEPTH;
     }
-    if (!isEmpty()&&pipelinedInstructions[left].instructionCycle == 7){
-    
-        left = (left + 1) % MAX_PIPELINE_DEPTH;totalPipelined--;}
+    if (!isEmpty()&&pipelinedInstructions[left].instructionCycle == 8){
+        printf(" REMOVING INSTRUCTION %d at cycle %d \n" ,pipelinedInstructions[left].instructionID,programCycle);
+        left = (left + 1) % MAX_PIPELINE_DEPTH;totalPipelined--;
+    }
 
-    if (programCycle % 2 == 1 && !isFull()&&pc<maxInstructionIndex) 
+    if (programCycle % 2 == 1 && !isFull()&&pc<maxInstructionIndex && !dataHazardOccured) 
         fetch();
-    //print clockcycle data
+
+
+    printf("\n[Ending Clock Cycle: %d] \n \n",programCycle);
     programCycle++;
 }
 
 void run(){
-    while(!fatalerror&&(pc<maxInstructionIndex || !isEmpty()))
+    while(!fatalHazard&&(pc<maxInstructionIndex || !isEmpty()))
         pipeline();
 }
 int main(){
