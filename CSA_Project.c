@@ -319,7 +319,6 @@ void decode(Instruction* instr){
         memcpy(sha, instr->encodedInstruction + 19, 13);
         sha[13] = '\0';
         instr->shamt = strtol(sha, NULL, 2); 
-        printf("\nInput: %s \nOutput: %s %s %s %s \n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->r3, instr->shamt); 
     }else if(instr->type == I){
         memcpy(er1, instr->encodedInstruction + 4, 5); 
         er1[5] = '\0';
@@ -332,13 +331,36 @@ void decode(Instruction* instr){
         im[18] = '\0';
         if(im[0] == '1') instr->imm =strtol(twosComplement(im,18), NULL, 2) * -1;
         else instr->imm = strtol(im, NULL, 2);
-        printf("\nInput: %s \nOutput: %s %s %s \n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->imm); 
     }else{
         char ad[29];
         memcpy(ad, instr->encodedInstruction + 4, 28);
         ad[28] = '\0';
         instr->address = strtol(ad, NULL, 2);
-        printf("\nInput: %s \nOutput: %s \n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->address); 
+    }
+
+    switch (instr->opcode) {
+        case 0: case 1: case 2: case 5: 
+            printf("Input: %s \nOutput: %sR%d R%d R%d \n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->r3); 
+            break;
+
+        case 3:
+            printf("Input: %s \nOutput: %s R%d %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->imm); 
+            break;
+            
+        case 4: case 6:
+            printf("Input: %s \nOutput:%s R%d R%d %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->imm); 
+            break;
+        case 10: case 11:
+            printf("Input: %s \nOutput: %s R%d R%d %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->imm); 
+            break;
+
+        case 7:
+            printf("Input: %s \nOutput:%s %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->address); 
+            break;
+
+        case 8: case 9: 
+            printf("Input: %s \nOutput:%s R%d R%d %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->shamt); 
+            break;
     }
 }
 
@@ -346,47 +368,58 @@ void execute(Instruction* inst, int cycle,int i){
     switch (inst->opcode) {
         case 0: //ADD
             inst->operationResult = registerFile[inst->r2] + registerFile[inst->r3];
+            printf("Input: %sR%d R%d R%d \nOutput: %d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->r3, inst->operationResult); 
             break;
         case 1: //SUB
             inst->operationResult = registerFile[inst->r2] - registerFile[inst->r3];
+            printf("Input: %sR%d R%d R%d \nOutput: %d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->r3, inst->operationResult);
             break;
         case 2: //MUL
             inst->operationResult = registerFile[inst->r2] * registerFile[inst->r3];
+            printf("Input: %sR%d R%d R%d \nOutput: %d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->r3, inst->operationResult);
             break;
         case 3: //MOVI
             inst->operationResult = inst->imm; 
+            printf("Input: %s R%d R%d \nOutput: %d \n",getInstructionName(inst->opcode), inst->r1, inst->imm, inst->operationResult);
             break;
         case 4: //JEQ
-            right = i;
             if (registerFile[inst->r1] == registerFile[inst->r2]) 
                 pc = inst->oldpc + inst->imm;
             totalPipelined=  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
+            right = i;
+            printf("Input: %sR%d R%d R%d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
             break;
         case 5: //AND
             inst->operationResult = registerFile[inst->r2] & registerFile[inst->r3];
+            printf("Input: %sR%d R%d R%d \nOutput: %d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->r3, inst->operationResult);
             break;
         case 6: //XORI
             inst->operationResult = registerFile[inst->r2] ^ inst->imm;
+            printf("Input: %s R%d R%d R%d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
             break;
         case 7: //JMP
-            right = i;
             pc = (inst->oldpc & 0xF0000000) | (inst->address & 0x0FFFFFFF);
             totalPipelined =  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
+            right = i;
+            printf("Input: %sR%d  \nOutput:%d \n",getInstructionName(inst->opcode), inst->address, inst->operationResult);
             return;
         case 8: //LSL
             inst->operationResult = registerFile[inst->r2] << inst->shamt;
+            printf("Input: %sR%d R%d R%d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->shamt, inst->operationResult);
             break;
         case 9: //LSR
             inst->operationResult = registerFile[inst->r2] >> inst->shamt;
+            printf("Input: %sR%d R%d R%d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->shamt, inst->operationResult);
             break;
         case 10: //MOVR
             inst->operationResult = registerFile[inst->r2] + inst->imm;
+            printf("Input: %s R%d R%d R%d \nLoaded from Address: %p \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
             break;
         case 11: //MOVM
             inst->operationResult = registerFile[inst->r2] + inst->imm;
+            printf("Input: %s R%d R%d R%d \nStored at Address: %p \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
             break;
     }
-    printf("\n"); // input: opcode, operand 1, operand 2, output: ALU result, branch taken: yes/no
 }
 
 void memory(Instruction* inst){
@@ -402,12 +435,8 @@ void memory(Instruction* inst){
                 }
 
                 char* result = mainMemory[address]; // accessing the result from the memory 
-                inst->operationResult = (int32_t)strtol(result, NULL, 2); //converting the binary result t int
-                //print needed 
-                // Memory Stage:
-                // Input  - Address: 0x10010010
-                // Output - Loaded data: 42
-
+                inst->operationResult = (int32_t)strtol(result, NULL, 2); //converting the binary result to int
+                printf("Input (Address): 0x%X\nLoaded data: %d \n", address, inst->operationResult);
                 break;
                 
             case 11:  // MOVM (STORE)
@@ -421,20 +450,9 @@ void memory(Instruction* inst){
 
                 strcpy(mainMemory[address], binaryVal);
                 free(binaryVal); // prevent memory leak
-                //print needed
-                // Memory Stage:
-                // Input  - Address: 0x10010010
-                //         Data to store: 42
-                // Output - Store confirmed
+                printf("Input (data): %d\nOutput (Address): 0x%X\n", registerFile[inst->r1], address);
 
                 break;
-            
-                default:
-                //print example: non-memory ops 
-                // Memory Stage:
-                // Input  - ALU Result: 15
-                // Output - Passed result: 15
-
         }
     }
 }
@@ -445,11 +463,11 @@ void write_back(Instruction* inst){
         
        if (inst->r1 != 0) { //Register 0 handling 
             registerFile[inst->r1] = inst->operationResult;
+            printf("Input: Dest Reg R%d | Data: %d \nOutput: R%d is updated to %d \n",inst->r1, registerFile[inst->r1], inst->r1 ,registerFile[inst->r1]); 
         } else {
-            // Still print that a write was attempted to R0 (required for logging)
+            printf("Error accessing Register 0");
         }
     }
-    printf("\n"); // input: dest reg, data, output: TRegister is updated to ...
 }
 
 //==========================================Pipeline Logic============================================
