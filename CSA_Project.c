@@ -271,10 +271,12 @@ void fetch(){
     Instruction instr;
     strcpy(instr.encodedInstruction, mainMemory[pc]);
     instr.instructionCycle=2;
+    int input_pc = pc;
     pc++;
     instr.instructionID=++totalFetched;
     printf("\nRunning Instruction Number : %d | Pipeline positon : %d | Clock cycle : %d ",instr.instructionID,right,1);
     printf("\nPhase: Fetch \n");
+    printf("Input: %d \nOutput Instruction: %s \n", input_pc, instr.encodedInstruction);
     pipelinedInstructions[right] =instr;
     instr.oldpc=pc;
 }
@@ -337,6 +339,7 @@ void decode(Instruction* instr){
         ad[28] = '\0';
         instr->address = strtol(ad, NULL, 2);
     }
+    printf("\n"); // input: instruction (ADD R1, R2, R3), output: Opcode, rs, rt, td, imm
 }
 
 void execute(Instruction* inst, int cycle,int i){
@@ -383,6 +386,7 @@ void execute(Instruction* inst, int cycle,int i){
             inst->operationResult = registerFile[inst->r2] + inst->imm;
             break;
     }
+    printf("\n"); // input: opcode, operand 1, operand 2, output: ALU result, branch taken: yes/no
 }
 
 void memory(Instruction* inst){
@@ -399,6 +403,11 @@ void memory(Instruction* inst){
 
                 char* result = mainMemory[address]; // accessing the result from the memory 
                 inst->operationResult = (int32_t)strtol(result, NULL, 2); //converting the binary result t int
+                //print needed 
+                // Memory Stage:
+                // Input  - Address: 0x10010010
+                // Output - Loaded data: 42
+
                 break;
                 
             case 11:  // MOVM (STORE)
@@ -412,9 +421,20 @@ void memory(Instruction* inst){
 
                 strcpy(mainMemory[address], binaryVal);
                 free(binaryVal); // prevent memory leak
+                //print needed
+                // Memory Stage:
+                // Input  - Address: 0x10010010
+                //         Data to store: 42
+                // Output - Store confirmed
+
                 break;
             
                 default:
+                //print example: non-memory ops 
+                // Memory Stage:
+                // Input  - ALU Result: 15
+                // Output - Passed result: 15
+
         }
     }
 }
@@ -429,7 +449,7 @@ void write_back(Instruction* inst){
             // Still print that a write was attempted to R0 (required for logging)
         }
     }
-    
+    printf("\n"); // input: dest reg, data, output: TRegister is updated to ...
 }
 
 //==========================================Pipeline Logic============================================
