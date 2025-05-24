@@ -522,7 +522,7 @@ void pipeline() {
         removedInstruction=1;
     }
 
-    if (programCycle % 2 == 1 && !isFull()&&pc<maxInstructionIndex && !dataHazardOccured && !removedInstruction) 
+    if (programCycle % 2 == 1 && !isFull()&&pc<maxInstructionIndex && !dataHazardOccured ) 
         fetch();
 
 
