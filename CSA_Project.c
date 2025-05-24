@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-//==========================================Data==========================================
+//==========================================Data===================================================================================================================================================
 //===================Constants===================
 #define MEMORY_SIZE 2048
 #define INSTRUCTION_START 0
@@ -43,8 +43,8 @@ int totalPipelined=0;
 int programCycle=1; 
 int totalFetched=0;
 int totalDataHazardDelay=0;
-//==========================================Code==========================================
-//=====================Printing===============================
+//==========================================Code===================================================================================================================================================
+//==========================================Printing====================================================
 void print_registers() {
     printf("\nRegister values :\n");
     for (int i = 1; i <= 12; i++) {
@@ -60,7 +60,7 @@ void print_memory() {
 }
 
 
-//=====================Helper Functions========================
+//==========================================Helper Functions=============================================
 char* getInstructionName(int opcode){
     switch(opcode){
         case 0: return "ADD ";
@@ -128,7 +128,7 @@ char* convertIntToBinary(int n, int size) {
     return twosComplement(str,size);
 }
 
-//=====================Program Initalizaiton===================
+//==========================================Program Initalizaiton========================================
 char* encode_opcode(char* plainOpcode){ 
     if (strcmp(plainOpcode, "ADD ") == 0) return "0000"; 
     if (strcmp(plainOpcode, "SUB ") == 0) return "0001";
@@ -264,7 +264,7 @@ void initialize_program(){
     initialize_registerFile();
     load_program("assembly.txt"); 
 }
-//=====================Program Logic========================
+//==========================================Program Logic=============================================
 void fetch(){
     totalPipelined++;
     right=(right+1)%4; 
@@ -274,7 +274,7 @@ void fetch(){
     pc++;
     instr.instructionID=++totalFetched;
     printf("\nRunning Instruction Number : %d | Pipeline positon : %d | Clock cycle : %d ",instr.instructionID,right,1);
-    printf("\nPhase: Fetch | Instruction Number : %d \n",instr.instructionID);
+    printf("\nPhase: Fetch \n");
     pipelinedInstructions[right] =instr;
     instr.oldpc=pc;
 }
@@ -432,7 +432,7 @@ void write_back(Instruction* inst){
     
 }
 
-//=====================Pipeline Logic=======================
+//==========================================Pipeline Logic============================================
 int isFull(){
     return totalPipelined==MAX_PIPELINE_DEPTH;
 }
@@ -448,13 +448,13 @@ int dataHazard(int i){
 
         }else if((pipelinedInstructions[j].instructionCycle<=7&&pipelinedInstructions[j].WBflag))
             if(pipelinedInstructions[j].r1 ==pipelinedInstructions[i].r2 ||pipelinedInstructions[j].r1 ==pipelinedInstructions[i].r3 )
-                return 1;
+                return pipelinedInstructions[j].instructionID;
 
         j = (j + 1) % MAX_PIPELINE_DEPTH;
     }
-    return 0;
+    return -1;
 }
-int fatalHazard=0;
+int fatalError=0;
 void pipeline() {
     int i = left;int dataHazardOccured=0;
     printf("============================================[Starting Clock Cycle: %d]============================================ \n",programCycle);
@@ -464,30 +464,30 @@ void pipeline() {
     printf("\nRunning Instruction Number : %d | Pipeline positon : %d | Clock cycle : %d ",pipelinedInstructions[i].instructionID,i,cycle);
 
         if(cycle>=8){
-            fatalHazard=1;
-            printf("FATAL HAZARD OCCURED BECAUSE OF INSTRUCTION NUMBER : %d \n",pipelinedInstructions[i].instructionID);
+            fatalError=1;
+            printf("\033[0;31mFATAL ERROR OCCURRED BECAUSE OF INSTRUCTION NUMBER : %d \033[0;0m\n",pipelinedInstructions[i].instructionID);
             return;
         }
-
-        if(cycle >=4 && dataHazard(i)){
+        int check=dataHazard(i);
+        if(cycle >=4 && check!=-1){
             dataHazardOccured=1;
             totalDataHazardDelay++;
-            printf("\nData Hazard Detected in instruction : %d | Will delay all instructions by 1 clock cycle \n",pipelinedInstructions[i].instructionID);
+            printf("\n\033[0;33mData Hazard Detected | Instruction : %d  | Waiting for instruction : %d | Delay all instructions by 1 clock cycle\033[0;0m \n",pipelinedInstructions[i].instructionID,check);
             break;
         }
         switch(cycle){
             case 2:
-            printf("\nPhase: Decode | Instruction Number : %d \n",pipelinedInstructions[i].instructionID);
+            printf("\nPhase: Decode \n");
             decode(&pipelinedInstructions[i]);break;
-            case 3:printf("\nPhase: Dummy Decode | Instruction Number : %d \n",pipelinedInstructions[i].instructionID);break;
+            case 3:printf("\nPhase: Dummy Decode \n");break;
             case 4:
-            printf("\nPhase: Execute | Instruction Number : %d \n",pipelinedInstructions[i].instructionID);
+            printf("\nPhase: Execute  \n");
             execute(&pipelinedInstructions[i], cycle, i);break;
-            case 5:printf("\nPhase: Dummy Execute | Instruction Number : %d \n",pipelinedInstructions[i].instructionID); break;
+            case 5:printf("\nPhase: Dummy Execute \n"); break;
             case 6:
-            printf("\nPhase: Memory | Instruction Number : %d \n",pipelinedInstructions[i].instructionID);
+            printf("\nPhase: Memory  \n");
             memory(&pipelinedInstructions[i]); break;
-            case 7:printf("\nPhase: Write Back |Instruction Number : %d \n",pipelinedInstructions[i].instructionID); 
+            case 7:printf("\nPhase: Write Back  \n"); 
             write_back(&pipelinedInstructions[i]);
         }
         pipelinedInstructions[i].instructionCycle++;
@@ -497,7 +497,7 @@ void pipeline() {
     }
     int removedInstruction=0;
     if (!isEmpty()&&pipelinedInstructions[left].instructionCycle == 8){
-        printf("\nInstruction number: %d | Completed at cycle : %d | Removing From Pipeline \n" ,pipelinedInstructions[left].instructionID,programCycle);
+        printf("\n\033[0;32mInstruction number: %d | Completed at cycle : %d | Removing From Pipeline | Remaining Instructions : %d \033[0;0m\n" ,pipelinedInstructions[left].instructionID,programCycle,totalPipelined-1);
         left = (left + 1) % MAX_PIPELINE_DEPTH;totalPipelined--;
         removedInstruction=1;
     }
@@ -511,7 +511,7 @@ void pipeline() {
 }
 
 void run(){
-    while(!fatalHazard&&(pc<maxInstructionIndex || !isEmpty()))
+    while(!fatalError&&(pc<maxInstructionIndex || !isEmpty()))
         pipeline();
 }
 int main(){
