@@ -275,7 +275,7 @@ void fetch(){
     instr.instructionID=++totalFetched;
     printf("\nRunning Instruction Number : %d | Pipeline positon : %d | Clock cycle : %d ",instr.instructionID,right,1);
     printf("\nPhase: Fetch \n");
-    printf("Input: %d \nOutput Instruction: %s \n", instr.instructionID, instr.encodedInstruction);
+    printf("Input (Instruction id): %d \nOutput (Encoded Instruction): %s \n", instr.instructionID, instr.encodedInstruction);
     pipelinedInstructions[right] =instr;
     instr.oldpc=pc;
 }
@@ -342,26 +342,26 @@ void decode(Instruction* instr){
 
     switch (instr->opcode) {
         case 0: case 1: case 2: case 5: 
-            printf("Input: %s \nOutput: %sR%d R%d R%d \n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->r3); 
+            printf("Input (Encoded Instruction): %s \nOutput: %sR%d R%d R%d \n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->r3); 
             break;
 
         case 3:
-            printf("Input: %s \nOutput: %s R%d %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->imm); 
+            printf("Input (Encoded Instruction): %s \nOutput: %s R%d %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->imm); 
             break;
             
         case 4: case 6:
-            printf("Input: %s \nOutput:%s R%d R%d %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->imm); 
+            printf("Input (Encoded Instruction): %s \nOutput:%s R%d R%d %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->imm); 
             break;
         case 10: case 11:
-            printf("Input: %s \nOutput: %s R%d R%d %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->imm); 
+            printf("Input (Encoded Instruction): %s \nOutput: %s R%d R%d %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->imm); 
             break;
 
         case 7:
-            printf("Input: %s \nOutput:%s %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->address); 
+            printf("Input (Encoded Instruction): %s \nOutput:%s %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->address); 
             break;
 
         case 8: case 9: 
-            printf("Input: %s \nOutput:%s R%d R%d %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->shamt); 
+            printf("Input (Encoded Instruction): %s \nOutput:%s R%d R%d %d\n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->shamt); 
             break;
     }
 }
@@ -417,12 +417,12 @@ void execute(Instruction* inst, int cycle,int i){
         case 10: //MOVR
             inst->operationResult = registerFile[inst->r2] + inst->imm;
             address = 1023 + inst->operationResult;
-            printf("Input: %s R%d R%d %d \nLoaded from Address: %d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, address);
+            printf("Input: %s R%d R%d %d \nLoaded from Address: 0x%X\n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, address);
             break;
         case 11: //MOVM
             inst->operationResult = registerFile[inst->r2] + inst->imm;
             address = 1023 + inst->operationResult;
-            printf("Input: %s R%d R%d %d \nStored at Address: %d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, address);
+            printf("Input: %s R%d R%d %d \nStored at Address: 0x%X\n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, address);
             break;
     }
 }
