@@ -271,12 +271,11 @@ void fetch(){
     Instruction instr;
     strcpy(instr.encodedInstruction, mainMemory[pc]);
     instr.instructionCycle=2;
-    int input_pc = pc;
     pc++;
     instr.instructionID=++totalFetched;
     printf("\nRunning Instruction Number : %d | Pipeline positon : %d | Clock cycle : %d ",instr.instructionID,right,1);
     printf("\nPhase: Fetch \n");
-    printf("Input: %d \nOutput Instruction: %s \n", input_pc, instr.encodedInstruction);
+    printf("Input: %d \nOutput Instruction: %s \n", instr.instructionID, instr.encodedInstruction);
     pipelinedInstructions[right] =instr;
     instr.oldpc=pc;
 }
@@ -320,7 +319,7 @@ void decode(Instruction* instr){
         memcpy(sha, instr->encodedInstruction + 19, 13);
         sha[13] = '\0';
         instr->shamt = strtol(sha, NULL, 2); 
-        
+        printf("\nInput: %s \nOutput: %s %s %s %s \n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->r3, instr->shamt); 
     }else if(instr->type == I){
         memcpy(er1, instr->encodedInstruction + 4, 5); 
         er1[5] = '\0';
@@ -333,13 +332,14 @@ void decode(Instruction* instr){
         im[18] = '\0';
         if(im[0] == '1') instr->imm =strtol(twosComplement(im,18), NULL, 2) * -1;
         else instr->imm = strtol(im, NULL, 2);
+        printf("\nInput: %s \nOutput: %s %s %s \n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->imm); 
     }else{
         char ad[29];
         memcpy(ad, instr->encodedInstruction + 4, 28);
         ad[28] = '\0';
         instr->address = strtol(ad, NULL, 2);
+        printf("\nInput: %s \nOutput: %s \n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->address); 
     }
-    printf("\n"); // input: instruction (ADD R1, R2, R3), output: Opcode, rs, rt, td, imm
 }
 
 void execute(Instruction* inst, int cycle,int i){
