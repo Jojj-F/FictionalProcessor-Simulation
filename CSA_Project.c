@@ -284,12 +284,14 @@ void setInstructionVariables(Instruction* instr, char* opcode){
     instr->instrName = malloc(strlen(getInstructionName(instr->opcode)) + 1);
     strcpy(instr->instrName, getInstructionName(instr->opcode));
     switch(instr->opcode){
-        case  0: case 1: case 2: case 3: case 5: case 6: case 8: case 9: case  10:
+        case  0: case 1: case 2: case 3: case 5: case 6: case 8: case 9:
         instr->MEMflag=0;instr->WBflag=1;break;
         case 11:
         instr->MEMflag=1;instr->WBflag=0;break;
         case 4: case 7:
         instr->MEMflag=0;instr->WBflag=0;break;
+        case 10:
+        instr->MEMflag=1;instr->WBflag=1;
     }
     instr->r1=-1;instr->r2=-1;instr->r3=-1;
     instr->shamt=-1;instr->address=-1;instr->imm=-1;
@@ -429,11 +431,12 @@ void memory(Instruction* inst){
         switch(inst->opcode) {
             case 10:  // MOVR (LOAD)
                 // Load from memory
-                address= inst->operationResult;
+                address= 1023 + inst->operationResult;
                 if (address < DATA_START || address > DATA_END) {
+                    printf("HALLOOOOO2 %d");
                     break;
                 }
-
+                printf("HALLOOOOO2");
                 char* result = mainMemory[address]; // accessing the result from the memory 
                 inst->operationResult = (int32_t)strtol(result, NULL, 2); //converting the binary result to int
                 printf("Input (Address): 0x%X\nLoaded data: %d \n", address, inst->operationResult);
@@ -442,7 +445,7 @@ void memory(Instruction* inst){
             case 11:  // MOVM (STORE)
                 // Store to memory
                 
-                 address = inst->operationResult;
+                 address = 1023 + inst->operationResult;
                 if (address < DATA_START || address > DATA_END) {
                     break;
                 }                
@@ -461,12 +464,12 @@ void write_back(Instruction* inst){
     // Only process if instruction needs writeback
     if (inst->WBflag) {   
        if (inst->r1 != 0) { //Register 0 handling 
-            if(inst->opcode == 10){ //HEREEEEEEEEEEEEEEEEEEEEEEEEEEE
-                char* result = mainMemory[inst->operationResult];
-                printf("TESTING: %s %d", result, inst->operationResult);
-                registerFile[inst->r1] = (int32_t)strtol(result, NULL, 2); 
-            }
-            else
+            // if(inst->opcode == 10){ //HEREEEEEEEEEEEEEEEEEEEEEEEEEEE
+            //     char* result = mainMemory[inst->operationResult];
+                 printf("TESTING: %d", inst->operationResult);
+            //     registerFile[inst->r1] = (int32_t)strtol(result, NULL, 2); 
+            // }
+            // else
                 registerFile[inst->r1] = inst->operationResult;
         printf("Input: Dest Reg R%d | Data: %d \nOutput: R%d is updated to %d \n",inst->r1, registerFile[inst->r1], inst->r1 ,registerFile[inst->r1]); 
         } else {
