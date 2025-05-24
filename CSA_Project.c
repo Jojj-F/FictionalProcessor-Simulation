@@ -495,12 +495,14 @@ void pipeline() {
 
         i = (i + 1) % MAX_PIPELINE_DEPTH;
     }
+    int removedInstruction=0;
     if (!isEmpty()&&pipelinedInstructions[left].instructionCycle == 8){
         printf("\nInstruction number: %d | Completed at cycle : %d | Removing From Pipeline \n" ,pipelinedInstructions[left].instructionID,programCycle);
         left = (left + 1) % MAX_PIPELINE_DEPTH;totalPipelined--;
+        removedInstruction=1;
     }
 
-    if (programCycle % 2 == 1 && !isFull()&&pc<maxInstructionIndex && !dataHazardOccured) 
+    if (programCycle % 2 == 1 && !isFull()&&pc<maxInstructionIndex && !dataHazardOccured && !removedInstruction) 
         fetch();
 
 
