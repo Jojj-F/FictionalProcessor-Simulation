@@ -19,11 +19,10 @@ int maxInstructionIndex;
 //=====================registerFile==================
 uint32_t registerFile[REGISTER_NO]; 
 uint32_t pc;
-
 //=====================Types===================
 typedef enum {R,I,J} InstrType;
-typedef enum {F,D,E,M,W} CyclePhase;
 typedef struct {
+    int instructionID;
     char encodedInstruction[33]; 
     int instructionCycle; // to be set = 1 
     int operationResult;
@@ -33,6 +32,7 @@ typedef struct {
     int32_t imm; //signed immediate values 
     int opcode, r1, r2, r3, shamt, address;
     int WBflag,MEMflag;
+    char *instrName;
 } Instruction;
 
 //=====================Pipeline===================
@@ -41,14 +41,9 @@ int left=0;
 int right=-1;
 int totalPipelined=0;
 int programCycle=1; 
+int totalFetched=0;
 //==========================================Code==========================================
 //=====================Printing===============================
-// void print_clock_cycle_data(){
-//     int i = left;
-//     while (!isEmpty()) {//TODO <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-//     }   
-// }
 void print_registers() {
     printf("\nRegister values :\n");
     for (int i = 1; i <= 6; i++) {
@@ -65,6 +60,35 @@ void print_memory() {
 
 
 //=====================Helper Functions========================
+char* getInstructionName(int opcode){
+    switch(opcode){
+        case 0: return "ADD ";
+        case 1: return "SUB ";
+        case 2: return "MUL ";
+        case 3: return "MOVI";
+        case 4: return "JEQ ";
+        case 5: return "AND ";
+        case 6: return "XORI";
+        case 7: return "JMP ";
+        case 8: return "LSL ";
+        case 9: return "LSR ";
+        case 10: return "MOVR";
+        case 11: return "MOVM";
+        default: return "Undefined Opcode";
+    }
+}
+char* getInstructionPhase(int instrucitonCycle){
+    switch(instrucitonCycle){
+        case 1: return "Fetch";
+        case 2: return "Decode";
+        case 3: return "Dummy Decode";
+        case 4: return "Execute";
+        case 5: return "Dummy Execute";
+        case 6: return "Memory";
+        case 7: return "Write Back";
+        default: return "Undefined Instruction Cycle"; 
+    }
+}
 InstrType get_instr_type (char* opcode) {
     if (strcmp(opcode, "0000") == 0|| strcmp(opcode, "0001") == 0 ||strcmp(opcode, "0010") == 0 || strcmp(opcode, "0101") == 0 || strcmp(opcode, "1000") == 0||strcmp(opcode, "1001") == 0) 
         return R;
@@ -104,8 +128,8 @@ char* convertIntToBinary(int n, int size) {
 }
 
 //=====================Program Initalizaiton===================
-char* encode_opcode(char* plainOpcode){  //passing only opcode 
-    if (strcmp(plainOpcode, "ADD ") == 0) return "0000"; // WB = 0,1 MEMflag = 0,1
+char* encode_opcode(char* plainOpcode){ 
+    if (strcmp(plainOpcode, "ADD ") == 0) return "0000"; 
     if (strcmp(plainOpcode, "SUB ") == 0) return "0001";
     if (strcmp(plainOpcode, "MUL ") == 0) return "0010";
     if (strcmp(plainOpcode, "MOVI") == 0) return "0011";
@@ -117,10 +141,10 @@ char* encode_opcode(char* plainOpcode){  //passing only opcode
     if (strcmp(plainOpcode, "LSR ") == 0) return "1001";
     if (strcmp(plainOpcode, "MOVR") == 0) return "1010";
     if (strcmp(plainOpcode, "MOVM") == 0) return "1011";
-    return "error";
+    return "Undefined Opcode Cant Encode";
 }
 
-char* encode_instruction(char* plainInstruction){//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+char* encode_instruction(char* plainInstruction){
     int size=strlen(plainInstruction);
     char opcode[5];char r1[]="00";char r2[]="00";char r3[]="00";
     opcode[4]='\0';
@@ -168,14 +192,14 @@ char* encode_instruction(char* plainInstruction){//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         int len_r2 = strlen(encodedR2);
         int len_r3 = strlen(encodedR3);
         int len_rem = strlen(remaining);
-         int total_len = len_op + len_r1 + len_r2 + len_r3 + len_rem;
-          char* merged = malloc(total_len + 1);
+        int total_len = len_op + len_r1 + len_r2 + len_r3 + len_rem;
+        char* merged = malloc(total_len + 1);
         strcpy(merged, encodedOpCode);
         strcat(merged, encodedR1);
         strcat(merged, encodedR2);
         strcat(merged, encodedR3);
         strcat(merged, remaining);
-            return merged;
+        return merged;
 
     }
     else if(type==I){
@@ -184,28 +208,26 @@ char* encode_instruction(char* plainInstruction){//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         int len_r2 = strlen(encodedR2);
         int len_rem = strlen(remaining);
         int total_len = len_op + len_r1 + len_r2  + len_rem;
-         char* merged = malloc(total_len + 1);
+        char* merged = malloc(total_len + 1);
         strcpy(merged, encodedOpCode);
         strcat(merged, encodedR1);
         strcat(merged, encodedR2);
         strcat(merged, remaining);
-            return merged;
+        return merged;
 
     }
 
     else{
         remaining=convertIntToBinary(atoi(rem),28);
-         int len_rem = strlen(remaining);
+        int len_rem = strlen(remaining);
         int total_len = len_op  + len_rem;
-         char* merged = malloc(total_len + 1);
+        char* merged = malloc(total_len + 1);
         strcpy(merged, encodedOpCode);
         strcat(merged, remaining);
-    return merged;
+        return merged;
 
     }
     
-
-   
 }
 
 void initialize_memory() {
@@ -229,7 +251,7 @@ void load_program(const char *filename) {
         char str[33];
         strncpy(str, encode_instruction(line), 33);        
         strncpy(mainMemory[index],str , 33);
-        mainMemory[index][32] = '\0'; // Ensure nul
+        mainMemory[index][32] = '\0'; 
         index++;
     }
     maxInstructionIndex=index;
@@ -243,16 +265,33 @@ void initialize_program(){
 }
 //=====================Program Logic========================
 void fetch(){
-    right=(right+1)%4; //first do add then fetch put into pipleined instructions array index right
+    totalPipelined++;
+    right=(right+1)%4; 
     Instruction instr;
     strcpy(instr.encodedInstruction, mainMemory[pc]);
-    instr.instructionCycle=1;
+    instr.instructionCycle=2;
     pc++;
-        printf("\n[Cycle %d] Fetching | %d | instruction cycle: %d \n", programCycle, right, instr.instructionCycle);
+    instr.instructionID=++totalFetched;
+    printf("\n[Cycle %d] Fetching instruction number: %d | instruction cycle: 1 \n", programCycle, instr.instructionID);
     pipelinedInstructions[right] =instr;
     instr.oldpc=pc;
 }
-
+void setInstructionVariables(Instruction* instr){
+    instr->type = get_instr_type(instr->opcode);
+    instr->instrName = malloc(strlen(getInstructionName(instr->opcode)) + 1);
+    strcpy(instr->instrName, getInstructionName(instr->opcode));
+    switch(instr->opcode){
+        case  0: case 1: case 2: case 3: case 5: case 6: case 8: case 9: case  10:
+        instr->MEMflag=0;instr->WBflag=1;break;
+        case 11:
+        instr->MEMflag=1;instr->WBflag=0;break;
+        case 4: case 7:
+        instr->MEMflag=0;instr->WBflag=0;break;
+    }
+    instr->r1=-1;instr->r2=-1;instr->r3=-1;
+    instr->shamt=-1;instr->address=-1;instr->imm=-1;
+    instr->operationResult=-1;
+}
 void decode(Instruction* instr){
     char opcode[5];
     char er1[6];
@@ -261,10 +300,9 @@ void decode(Instruction* instr){
 
     strncpy(opcode, instr->encodedInstruction, 4);
     opcode[4]='\0';
-    instr->type = get_instr_type(opcode);
     instr->opcode = strtol(opcode, NULL, 2);
-    if(instr->type == R){
-        
+    setInstructionVariables(instr);
+    if(instr->type == R){   
         memcpy(er1, instr->encodedInstruction + 4, 5); 
         er1[5] = '\0';
         instr->r1 = strtol(er1, NULL, 2);
@@ -297,76 +335,55 @@ void decode(Instruction* instr){
         ad[28] = '\0';
         instr->address = strtol(ad, NULL, 2);
     }
-    printf("\n[Cycle %d] Stage: Decoding | Instruction: %s | R1=%d R2=%d R3=%d IMM=%d SHAMT=%d ADDR=%d\n", programCycle, instr->encodedInstruction, instr->r1, instr->r2, instr->r3, instr->imm, instr->shamt, instr->address); // instruction output per cycle 
+    printf("\n[Cycle %d] Stage: Decoding | Instruction Number: %d | Instruction: %s | R1=%d R2=%d R3=%d IMM=%d SHAMT=%d ADDR=%d\n", programCycle,instr->instructionID, instr->encodedInstruction, instr->r1, instr->r2, instr->r3, instr->imm, instr->shamt, instr->address); // instruction output per cycle 
 
 }
 
 void execute(Instruction* inst, int cycle,int i){
-    printf("\n[Cycle %d] Executing | Instruction:: %s \n", cycle, inst->encodedInstruction);
+    printf("\n[Cycle %d] Stage: Executing | Instruction Number: %d \n", cycle, inst->instructionID);
 
     switch (inst->opcode) {
-        case 0:
+        case 0: //ADD
             inst->operationResult = registerFile[inst->r2] + registerFile[inst->r3];
             printf("TESTING: result %d r2 %d r3 %d", inst->operationResult, registerFile[inst->r2], registerFile[inst->r3]);
-            inst->WBflag = 1; 
             break;
-        case 1:
+        case 1: //SUB
             inst->operationResult = registerFile[inst->r2] - registerFile[inst->r3];
-            inst->WBflag = 1;
             break;
-        case 2:
+        case 2: //MUL
             inst->operationResult = registerFile[inst->r2] * registerFile[inst->r3];
-            inst->WBflag = 1;
             break;
-        case 3:
+        case 3: //MOVI
             inst->operationResult = inst->imm; 
-            inst->WBflag = 1;
             break;
-        case 4:
+        case 4: //JEQ
             right = i;
             if (registerFile[inst->r1] == registerFile[inst->r2]) 
                 pc = inst->oldpc + inst->imm;
             totalPipelined=  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
-            // Flush the next 2 instructions in the pipeline 
-            // pipelinedInstructions[(i + 1) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
-            // pipelinedInstructions[(i + 2) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
-
-            // printf(" [Branch Taken] Flushed instructions at positions %d and %d\n", (i + 1) % MAX_PIPELINE_DEPTH, (i + 2) % MAX_PIPELINE_DEPTH);
             break;
-        case 5:
+        case 5: //AND
             inst->operationResult = registerFile[inst->r2] & registerFile[inst->r3];
-            inst->WBflag = 1;
             break;
-        case 6:
+        case 6: //XORI
             inst->operationResult = registerFile[inst->r2] ^ inst->imm;
-            inst->WBflag = 1;
             break;
-        case 7:
+        case 7: //JMP
             right = i;
-            pc = (inst->oldpc & 0x0FFFFFFF) | inst->address;  
+            pc = (inst->oldpc & 0xF0000000) | (inst->address & 0x0FFFFFFF);
             totalPipelined =  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
-            // Flush the next two instructions
-            // pipelinedInstructions[(i + 1) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
-            // pipelinedInstructions[(i + 2) % MAX_PIPELINE_DEPTH].instructionCycle = 7;
-
-            // printf(" [JUMP] Flushed instructions at positions %d and %d\n", (i + 1) % MAX_PIPELINE_DEPTH, (i + 2) % MAX_PIPELINE_DEPTH);
             return;
-        case 8:
+        case 8: //LSL
             inst->operationResult = registerFile[inst->r2] << inst->shamt;
-            inst->WBflag = 1;
             break;
-        case 9:
+        case 9: //LSR
             inst->operationResult = registerFile[inst->r2] >> inst->shamt;
-            inst->WBflag = 1;
             break;
-        case 10:  // LOAD
+        case 10: //MOVR
             inst->operationResult = registerFile[inst->r2] + inst->imm;
-            inst->MEMflag = 1;
-            inst->WBflag = 1;
             break;
-        case 11:  // STORE
+        case 11: //MOVM
             inst->operationResult = registerFile[inst->r2] + inst->imm;
-            inst->MEMflag = 1;
             break;
     }
 }
@@ -431,6 +448,20 @@ void write_back(Instruction* inst){
 }
 
 //=====================Pipeline Logic=======================
+int dataHazard(int i){
+    int j=left;
+    while (!isEmpty()) {
+        if (j == i) break;
+        if(pipelinedInstructions[j].instructionCycle<6&&pipelinedInstructions[j].MEMflag){
+            // How to stop memory idk?
+
+        }else if((pipelinedInstructions[j].instructionCycle<7&&pipelinedInstructions[j].WBflag))
+            if(pipelinedInstructions[j].r1 ==pipelinedInstructions[i].r2 ||pipelinedInstructions[j].r1 ==pipelinedInstructions[i].r3 )
+                return 1;
+        j = (j + 1) % MAX_PIPELINE_DEPTH;
+    }
+    return 0;
+}
 int isFull(){
     return totalPipelined==MAX_PIPELINE_DEPTH;
 }
@@ -441,39 +472,21 @@ int fatalerror=0;
 void pipeline() {
     int i = left;
     while (!isEmpty()) {
+        if (i == right) break;
         int cycle = pipelinedInstructions[i].instructionCycle;
-        if(cycle>=7){
-            fatalerror=1;
-            printf("FATAL ERROR OCCURED %d %d %d %d \n",i,left,right,cycle);
-            return;
+        if(dataHazard(i)){
+            printf("Data Hazard Detected Will delay all instructions by 1 clock cycle");
+            break;
         }
-        // // Enforce your constraints:
-        // if (programCycle % 2 == 1) {
-        //     // Odd cycle: allow IF (instructionCycle == 1) but skip MEM (5)
-        //     if (cycle == 5) {
-        //         i = (i + 1) % MAX_PIPELINE_DEPTH;
-        //         if (i == (right + 1) % MAX_PIPELINE_DEPTH) break;
-        //         continue;
-        //     }
-        // } else {
-        //     // Even cycle: allow MEM (5), but skip IF (1)
-        //     if (cycle == 1) {
-        //         i = (i + 1) % MAX_PIPELINE_DEPTH;
-        //         if (i == (right + 1) % MAX_PIPELINE_DEPTH) break;
-        //         continue;
-        //     }
-        // }
-        //printf(" %d %d %d %d \n",i,left,right,cycle);
         switch(cycle){
-            case 1: decode(&pipelinedInstructions[i]);
-            case 2: break;
-            case 3: execute(&pipelinedInstructions[i], cycle, i);
-            case 4: break;
-            case 5: memory(&pipelinedInstructions[i]); break;
-            case 6: write_back(&pipelinedInstructions[i]);
+            case 2: decode(&pipelinedInstructions[i]);
+            case 3: break;
+            case 4: execute(&pipelinedInstructions[i], cycle, i);
+            case 5: break;
+            case 6: memory(&pipelinedInstructions[i]); break;
+            case 7: write_back(&pipelinedInstructions[i]);
         }
         pipelinedInstructions[i].instructionCycle++;
-        if (i == right) break;
 
         i = (i + 1) % MAX_PIPELINE_DEPTH;
     }
@@ -481,10 +494,8 @@ void pipeline() {
     
         left = (left + 1) % MAX_PIPELINE_DEPTH;totalPipelined--;}
 
-    if (programCycle % 2 == 1 && !isFull()&&pc<maxInstructionIndex) {
+    if (programCycle % 2 == 1 && !isFull()&&pc<maxInstructionIndex) 
         fetch();
-        totalPipelined++;
-    }
     //print clockcycle data
     programCycle++;
 }
