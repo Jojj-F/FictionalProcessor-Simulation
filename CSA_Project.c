@@ -367,6 +367,7 @@ void decode(Instruction* instr){
 }
 
 void execute(Instruction* inst, int cycle,int i){
+    int address;
     switch (inst->opcode) {
         case 0: //ADD
             inst->operationResult = registerFile[inst->r2] + registerFile[inst->r3];
@@ -415,11 +416,13 @@ void execute(Instruction* inst, int cycle,int i){
             break;
         case 10: //MOVR
             inst->operationResult = registerFile[inst->r2] + inst->imm;
-            printf("Input: %s R%d R%d %d \nLoaded from Address: %d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
+            address = 1023 + inst->operationResult;
+            printf("Input: %s R%d R%d %d \nLoaded from Address: %d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, address);
             break;
         case 11: //MOVM
             inst->operationResult = registerFile[inst->r2] + inst->imm;
-            printf("Input: %s R%d R%d %d \nStored at Address: %d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
+            address = 1023 + inst->operationResult;
+            printf("Input: %s R%d R%d %d \nStored at Address: %d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, address);
             break;
     }
 }
@@ -433,10 +436,8 @@ void memory(Instruction* inst){
                 // Load from memory
                 address= 1023 + inst->operationResult;
                 if (address < DATA_START || address > DATA_END) {
-                    printf("HALLOOOOO2 %d");
                     break;
                 }
-                printf("HALLOOOOO2");
                 char* result = mainMemory[address]; // accessing the result from the memory 
                 inst->operationResult = (int32_t)strtol(result, NULL, 2); //converting the binary result to int
                 printf("Input (Address): 0x%X\nLoaded data: %d \n", address, inst->operationResult);
@@ -464,12 +465,6 @@ void write_back(Instruction* inst){
     // Only process if instruction needs writeback
     if (inst->WBflag) {   
        if (inst->r1 != 0) { //Register 0 handling 
-            // if(inst->opcode == 10){ //HEREEEEEEEEEEEEEEEEEEEEEEEEEEE
-            //     char* result = mainMemory[inst->operationResult];
-                 printf("TESTING: %d", inst->operationResult);
-            //     registerFile[inst->r1] = (int32_t)strtol(result, NULL, 2); 
-            // }
-            // else
                 registerFile[inst->r1] = inst->operationResult;
         printf("Input: Dest Reg R%d | Data: %d \nOutput: R%d is updated to %d \n",inst->r1, registerFile[inst->r1], inst->r1 ,registerFile[inst->r1]); 
         } else {
