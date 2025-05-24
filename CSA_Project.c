@@ -47,7 +47,7 @@ int totalDataHazardDelay=0;
 //==========================================Printing====================================================
 void print_registers() {
     printf("\nRegister values :\n");
-    for (int i = 1; i <= 12; i++) {
+    for (int i = 1; i <= 15; i++) {
         printf("R%d = %d (0x%X)\n", i, registerFile[i], registerFile[i]);
     }
     printf("Final PC = %u\n", pc);
@@ -380,14 +380,14 @@ void execute(Instruction* inst, int cycle,int i){
             break;
         case 3: //MOVI
             inst->operationResult = inst->imm; 
-            printf("Input: %s R%d R%d \nOutput: %d \n",getInstructionName(inst->opcode), inst->r1, inst->imm, inst->operationResult);
+            printf("Input: %s R%d %d \nOutput: %d \n",getInstructionName(inst->opcode), inst->r1, inst->imm, inst->operationResult);
             break;
         case 4: //JEQ
             if (registerFile[inst->r1] == registerFile[inst->r2]) 
-                pc = inst->oldpc + inst->imm;
+                pc = pc + inst->imm;
             totalPipelined=  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
             right = i;
-            printf("Input: %sR%d R%d R%d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
+            printf("Input: %sR%d R%d %d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, pc);
             break;
         case 5: //AND
             inst->operationResult = registerFile[inst->r2] & registerFile[inst->r3];
@@ -395,7 +395,7 @@ void execute(Instruction* inst, int cycle,int i){
             break;
         case 6: //XORI
             inst->operationResult = registerFile[inst->r2] ^ inst->imm;
-            printf("Input: %s R%d R%d R%d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
+            printf("Input: %s R%d R%d %d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
             break;
         case 7: //JMP
             pc = (inst->oldpc & 0xF0000000) | (inst->address & 0x0FFFFFFF);
@@ -404,20 +404,20 @@ void execute(Instruction* inst, int cycle,int i){
             printf("Input: %sR%d  \nOutput:%d \n",getInstructionName(inst->opcode), inst->address, inst->operationResult);
             return;
         case 8: //LSL
-            inst->operationResult = registerFile[inst->r2] << inst->shamt;
-            printf("Input: %sR%d R%d R%d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->shamt, inst->operationResult);
+            inst->operationResult = registerFile[inst->r2] << inst->shamt;         
+            printf("Input: %sR%d R%d %d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->shamt, inst->operationResult);
             break;
         case 9: //LSR
             inst->operationResult = registerFile[inst->r2] >> inst->shamt;
-            printf("Input: %sR%d R%d R%d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->shamt, inst->operationResult);
+            printf("Input: %sR%d R%d %d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->shamt, inst->operationResult);
             break;
         case 10: //MOVR
             inst->operationResult = registerFile[inst->r2] + inst->imm;
-            printf("Input: %s R%d R%d R%d \nLoaded from Address: %p \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
+            printf("Input: %s R%d R%d %d \nLoaded from Address: %d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
             break;
         case 11: //MOVM
             inst->operationResult = registerFile[inst->r2] + inst->imm;
-            printf("Input: %s R%d R%d R%d \nStored at Address: %p \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
+            printf("Input: %s R%d R%d %d \nStored at Address: %d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
             break;
     }
 }
@@ -459,11 +459,16 @@ void memory(Instruction* inst){
 
 void write_back(Instruction* inst){
     // Only process if instruction needs writeback
-    if (inst->WBflag) {
-        
+    if (inst->WBflag) {   
        if (inst->r1 != 0) { //Register 0 handling 
-            registerFile[inst->r1] = inst->operationResult;
-            printf("Input: Dest Reg R%d | Data: %d \nOutput: R%d is updated to %d \n",inst->r1, registerFile[inst->r1], inst->r1 ,registerFile[inst->r1]); 
+            if(inst->opcode == 10){ //HEREEEEEEEEEEEEEEEEEEEEEEEEEEE
+                char* result = mainMemory[inst->operationResult];
+                printf("TESTING: %s %d", result, inst->operationResult);
+                registerFile[inst->r1] = (int32_t)strtol(result, NULL, 2); 
+            }
+            else
+                registerFile[inst->r1] = inst->operationResult;
+        printf("Input: Dest Reg R%d | Data: %d \nOutput: R%d is updated to %d \n",inst->r1, registerFile[inst->r1], inst->r1 ,registerFile[inst->r1]); 
         } else {
             printf("Error accessing Register 0");
         }
@@ -526,7 +531,7 @@ void pipeline() {
             printf("\nPhase: Memory  \n");
             memory(&pipelinedInstructions[i]); break;
             case 7:printf("\nPhase: Write Back  \n"); 
-            write_back(&pipelinedInstructions[i]);
+            write_back(&pipelinedInstructions[i]);break;
         }
         pipelinedInstructions[i].instructionCycle++;
         if (i == right) break;
