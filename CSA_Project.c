@@ -47,7 +47,7 @@ int totalDataHazardDelay=0;
 //==========================================Printing====================================================
 void print_registers() {
     printf("\nRegister values :\n");
-    for (int i = 1; i <= 31; i++) {
+    for (int i = 0; i <= 31; i++) {
         printf("R%d = %d (0x%X)\n", i, registerFile[i], registerFile[i]);
     }
     printf("Final PC = %u\n", pc);
@@ -302,7 +302,6 @@ void decode(Instruction* instr){
     char er1[6];
     char er2[6];
     char er3[6];
-
     strncpy(opcode, instr->encodedInstruction, 4);
     opcode[4]='\0';
     instr->opcode = strtol(opcode, NULL, 2);
@@ -339,7 +338,6 @@ void decode(Instruction* instr){
         ad[28] = '\0';
         instr->address = strtol(ad, NULL, 2);
     }
-
     switch (instr->opcode) {
         case 0: case 1: case 2: case 5: 
             printf("Input (Encoded Instruction): %s \nOutput: %sR%d R%d R%d \n", instr->encodedInstruction, getInstructionName(instr->opcode), instr->r1, instr->r2, instr->r3); 
@@ -386,10 +384,11 @@ void execute(Instruction* inst, int cycle,int i){
             printf("Input: %s R%d %d \nOutput: %d \n",getInstructionName(inst->opcode), inst->r1, inst->imm, inst->operationResult);
             break;
         case 4: //JEQ
-            if (registerFile[inst->r1] == registerFile[inst->r2]) 
-                pc = pc + inst->imm;
-            totalPipelined=  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
-            right = i;
+            if (registerFile[inst->r1] == registerFile[inst->r2]) {
+                pc = pc - 1+ inst->imm; //THERE IS A PROBLEM IN oldpc
+                totalPipelined=  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
+                right = i; 
+            }
             printf("Input: %sR%d R%d %d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, pc);
             break;
         case 5: //AND
@@ -401,7 +400,7 @@ void execute(Instruction* inst, int cycle,int i){
             printf("Input: %s R%d R%d %d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
             break;
         case 7: //JMP
-            pc = (inst->oldpc & 0xF0000000) | (inst->address & 0x0FFFFFFF);
+            pc = (pc& 0xF0000000) | (inst->address & 0x0FFFFFFF); //THERE IS A PROBLEM IN oldpc
             totalPipelined =  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
             right = i;
             printf("Input: %s%d  \nOutput (new PC):%d \n",getInstructionName(inst->opcode), inst->address, pc);
@@ -417,6 +416,7 @@ void execute(Instruction* inst, int cycle,int i){
         case 10: //MOVR
             inst->operationResult = registerFile[inst->r2] + inst->imm;
             address = 1023 + inst->operationResult;
+            printf("TESTING: PC = %d OLDPC = %d", pc, inst->oldpc);
             printf("Input: %s R%d R%d %d \nLoaded from Address: 0x%X\n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, address);
             break;
         case 11: //MOVM
