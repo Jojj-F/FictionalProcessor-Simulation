@@ -47,7 +47,7 @@ int totalDataHazardDelay=0;
 //==========================================Printing====================================================
 void print_registers() {
     printf("\nRegister values :\n");
-    for (int i = 1; i <= 15; i++) {
+    for (int i = 1; i <= 31; i++) {
         printf("R%d = %d (0x%X)\n", i, registerFile[i], registerFile[i]);
     }
     printf("Final PC = %u\n", pc);
@@ -404,7 +404,7 @@ void execute(Instruction* inst, int cycle,int i){
             pc = (inst->oldpc & 0xF0000000) | (inst->address & 0x0FFFFFFF);
             totalPipelined =  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
             right = i;
-            printf("Input: %sR%d  \nOutput:%d \n",getInstructionName(inst->opcode), inst->address, inst->operationResult);
+            printf("Input: %s%d  \nOutput (new PC):%d \n",getInstructionName(inst->opcode), inst->address, pc);
             return;
         case 8: //LSL
             inst->operationResult = registerFile[inst->r2] << inst->shamt;         
@@ -560,7 +560,7 @@ int main(){
   
     run();
     print_registers();
-   // print_memory();
+    //print_memory();
     return 0;
 }
 
