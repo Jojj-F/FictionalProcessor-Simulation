@@ -385,7 +385,7 @@ void execute(Instruction* inst, int cycle,int i){
             break;
         case 4: //JEQ
             if (registerFile[inst->r1] == registerFile[inst->r2]) {
-                pc = pc - 1+ inst->imm; //THERE IS A PROBLEM IN oldpc
+                pc = (pc-1) + inst->imm; //THERE IS A PROBLEM IN oldpc
                 totalPipelined=  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
                 right = i; 
             }
@@ -400,7 +400,7 @@ void execute(Instruction* inst, int cycle,int i){
             printf("Input: %s R%d R%d %d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, inst->operationResult);
             break;
         case 7: //JMP
-            pc = (pc& 0xF0000000) | (inst->address & 0x0FFFFFFF); //THERE IS A PROBLEM IN oldpc
+            pc = ((pc-1) & 0xF0000000) | (inst->address & 0x0FFFFFFF); //THERE IS A PROBLEM IN oldpc
             totalPipelined =  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
             right = i;
             printf("Input: %s%d  \nOutput (new PC):%d \n",getInstructionName(inst->opcode), inst->address, pc);
