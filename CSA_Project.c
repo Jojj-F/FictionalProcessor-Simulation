@@ -161,7 +161,7 @@ char* encode_instruction(char* plainInstruction){
         else if(plainInstruction[i]=='R'){
             i++;
             if(i+1<size && plainInstruction[i+1]!=' '){
-                if(wR==1) r1[0]=plainInstruction[i++];
+                if(wR==1) r1[0]=plainInstruction[i++]; 
                 else if(wR==2) r2[0]=plainInstruction[i++];
                 else r3[0]=plainInstruction[i++];
             }
@@ -306,6 +306,7 @@ void decode(Instruction* instr){
     opcode[4]='\0';
     instr->opcode = strtol(opcode, NULL, 2);
     setInstructionVariables(instr, opcode);
+
     if(instr->type == R){   
         memcpy(er1, instr->encodedInstruction + 4, 5); 
         er1[5] = '\0';
@@ -389,7 +390,7 @@ void execute(Instruction* inst, int cycle,int i){
                 totalPipelined=  totalPipelined - ((right-i)+MAX_PIPELINE_DEPTH)%MAX_PIPELINE_DEPTH;
                 right = i; 
             }
-            printf("Input: %sR%d R%d %d \nOutput:%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, pc);
+            printf("Input: %sR%d R%d %d \nOutput(new PC):%d \n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, pc);
             break;
         case 5: //AND
             inst->operationResult = registerFile[inst->r2] & registerFile[inst->r3];
@@ -416,7 +417,6 @@ void execute(Instruction* inst, int cycle,int i){
         case 10: //MOVR
             inst->operationResult = registerFile[inst->r2] + inst->imm;
             address = 1023 + inst->operationResult;
-            printf("TESTING: PC = %d OLDPC = %d", pc, inst->oldpc);
             printf("Input: %s R%d R%d %d \nLoaded from Address: 0x%X\n",getInstructionName(inst->opcode), inst->r1, inst->r2, inst->imm, address);
             break;
         case 11: //MOVM
@@ -560,7 +560,7 @@ int main(){
   
     run();
     print_registers();
-    //print_memory();
+    print_memory();
     return 0;
 }
 
